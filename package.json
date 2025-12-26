@@ -1,0 +1,115 @@
+{
+  "name": "media-converter-pro",
+  "version": "2.0.0",
+  "description": "Aplicación de escritorio premium para descargar videos de YouTube y convertir archivos multimedia. Soporta MP3, MP4, WAV y más formatos.",
+  "main": "src/main/index.js",
+  "author": {
+    "name": "Media Converter Team"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/your-username/media-converter-pro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/media-converter-pro.git"
+  },
+  "keywords": [
+    "youtube",
+    "downloader",
+    "converter",
+    "mp3",
+    "mp4",
+    "electron",
+    "ffmpeg",
+    "yt-dlp"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write \"src/**/*.{js,css,html}\""
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "yt-dlp-exec": "^1.0.2",
+    "yt-dlp-wrap": "^2.3.12"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0"
+  },
+  "build": {
+    "appId": "com.mediaconverter.pro",
+    "productName": "Media Converter Pro",
+    "copyright": "Copyright © 2024 Media Converter Team",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/ffmpeg-static/ffmpeg.exe",
+        "to": "ffmpeg.exe"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Media Converter Pro"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
