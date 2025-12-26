@@ -1,28 +1,36 @@
 /* =========================================
-   Media Converter Pro - Simplified Styles
+   Media Converter Pro - Dark Blue Theme
    ========================================= */
 
 :root {
-    --primary: #ff0050;
-    --primary-dark: #d60043;
-    --primary-glow: rgba(255, 0, 80, 0.3);
+    /* Primary - Azul profundo */
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-glow: rgba(59, 130, 246, 0.3);
 
-    --bg-gradient: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 50%, #16213e 100%);
+    /* Fondo - Azul muy oscuro */
+    --bg-gradient: linear-gradient(145deg, #0a1628 0%, #0d1321 50%, #0f172a 100%);
 
-    --surface: rgba(255, 255, 255, 0.03);
-    --surface-hover: rgba(255, 255, 255, 0.06);
-    --surface-active: rgba(255, 255, 255, 0.1);
+    /* Superficies con más azul */
+    --surface: rgba(59, 130, 246, 0.05);
+    --surface-hover: rgba(59, 130, 246, 0.1);
+    --surface-active: rgba(59, 130, 246, 0.15);
 
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.15);
+    /* Bordes con tinte azul */
+    --border: rgba(59, 130, 246, 0.15);
+    --border-hover: rgba(59, 130, 246, 0.3);
 
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-muted: rgba(255, 255, 255, 0.4);
+    /* Texto */
+    --text-primary: #f1f5f9;
+    --text-secondary: rgba(241, 245, 249, 0.7);
+    --text-muted: rgba(241, 245, 249, 0.4);
 
-    --success: #00d68f;
-    --error: #ff6b6b;
+    /* Estados */
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
 
+    /* Otros */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -638,7 +646,7 @@ body {
 }
 
 .quality-btn.active {
-    background: rgba(102, 126, 234, 0.2);
+    background: var(--primary-glow);
     border-color: var(--primary);
     color: var(--primary);
 }

@@ -14,8 +14,10 @@ const {
     TIMEOUTS
 } = require('../../config/constants');
 
-// FFmpeg path from ffmpeg-static
-const ffmpegPath = require('ffmpeg-static');
+// FFmpeg path - diferente en desarrollo vs producción
+const ffmpegPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'ffmpeg.exe')  // Producción: extraResources
+    : require('ffmpeg-static');                        // Desarrollo: node_modules
 
 // Path donde se guardará yt-dlp
 const YT_DLP_DIR = path.join(app.getPath('userData'), 'bin');

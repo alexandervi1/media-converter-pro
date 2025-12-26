@@ -8,8 +8,10 @@ const { registerConverterHandlers } = require('./ipc/converter');
 const { registerFileHandlers } = require('./ipc/files');
 const logger = require('./utils/logger');
 
-// Configurar FFmpeg path globalmente
-const ffmpegPath = require('ffmpeg-static');
+// Configurar FFmpeg path globalmente - diferente en desarrollo vs producción
+const ffmpegPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'ffmpeg.exe')
+    : require('ffmpeg-static');
 process.env.FFMPEG_PATH = ffmpegPath;
 
 /**

@@ -1,12 +1,16 @@
 'use strict';
 
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, app } = require('electron');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
 const { getMainWindow } = require('../window');
+
+// FFmpeg path - diferente en desarrollo vs producción
+const ffmpegPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'ffmpeg.exe')
+    : require('ffmpeg-static');
 
 // Configurar path de FFmpeg
 ffmpeg.setFfmpegPath(ffmpegPath);
