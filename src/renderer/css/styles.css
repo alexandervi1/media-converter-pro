@@ -35,7 +35,124 @@
     --radius-md: 12px;
     --radius-lg: 16px;
 
+    /* Transiciones mejoradas */
     --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =========================================
+   Animaciones Keyframes
+   ========================================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 * {
@@ -195,9 +312,275 @@ body {
     stroke: var(--success);
 }
 
+/* Tab Downloads special styling */
+.mode-tab#tab-downloads.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.mode-tab#tab-downloads.active svg {
+    stroke: var(--primary);
+}
+
+/* Badge in tab */
+.tab-badge {
+    background: var(--primary);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    animation: scaleIn 0.3s var(--transition-bounce);
+}
+
+.tab-badge:empty {
+    display: none;
+}
+
+/* Badge pulsing when new item added */
+.tab-badge.pulse {
+    animation: badgePulse 0.5s ease;
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+        background: var(--success);
+    }
+}
+
+/* Flying Element for throw animation */
+.flying-element {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--spotify-green), var(--spotify-green-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transform: scale(0);
+    box-shadow: 0 4px 20px var(--spotify-green-glow);
+}
+
+.flying-element svg {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+}
+
+.flying-element.flying {
+    opacity: 1;
+    animation: throwToCart 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes throwToCart {
+    0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(0.8) rotate(180deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.3) rotate(360deg);
+    }
+}
+
+/* Downloads Mode - as separate view */
+#mode-downloads {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    animation: fadeIn 0.25s ease;
+    flex: 1;
+    overflow: hidden;
+}
+
+#mode-downloads.active {
+    display: flex;
+}
+
+/* Hide downloads section in ALL modes except downloads */
+.downloads-section {
+    display: none;
+}
+
+body.mode-url .downloads-section,
+body.mode-search .downloads-section,
+body.mode-spotify .downloads-section {
+    display: none !important;
+}
+
+/* Show downloads section ONLY in downloads mode */
+body.mode-downloads .downloads-section {
+    display: flex !important;
+    flex: 1;
+}
+
 /* Input Mode */
 .input-mode.hidden {
     display: none;
+}
+
+/* =========================================
+   Compact Toolbar (Format + Folder)
+   ========================================= */
+.compact-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+}
+
+.toolbar-format {
+    display: flex;
+    gap: 4px;
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.toolbar-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+}
+
+.toolbar-btn.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.toolbar-btn.active svg {
+    stroke: var(--success);
+}
+
+/* Spotify specific - green active state */
+#spotify-toolbar .toolbar-btn.active {
+    background: rgba(29, 185, 84, 0.15);
+    border-color: var(--spotify-green);
+    color: var(--spotify-green);
+}
+
+#spotify-toolbar .toolbar-btn.active svg {
+    stroke: var(--spotify-green);
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.toolbar-folder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    max-width: 160px;
+    overflow: hidden;
+}
+
+.toolbar-folder svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    stroke: var(--text-muted);
+}
+
+.toolbar-folder span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.toolbar-folder:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+}
+
+.toolbar-folder.selected {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.toolbar-folder.selected svg {
+    stroke: var(--primary);
+}
+
+/* Hide original format/folder toggles when in spotify/search mode */
+body.mode-spotify .format-toggle,
+body.mode-spotify .folder-row,
+body.mode-spotify .quality-toggle,
+body.mode-search .format-toggle,
+body.mode-search .folder-row,
+body.mode-search .quality-toggle {
+    display: none;
+}
+
+/* Hide ALL other elements in downloads mode - only show downloads list */
+body.mode-downloads .format-toggle,
+body.mode-downloads .folder-row,
+body.mode-downloads .quality-toggle,
+body.mode-downloads .video-preview,
+body.mode-downloads #mode-url,
+body.mode-downloads #mode-search,
+body.mode-downloads #mode-spotify,
+body.mode-downloads .mode-tabs~.input-mode {
+    display: none !important;
+}
+
+/* Make downloads section take full space in downloads mode */
+body.mode-downloads .downloads-section {
+    display: flex !important;
+    flex: 1;
+    margin-top: 0;
 }
 
 /* Search Button */
@@ -264,6 +647,36 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.item-delete,
+.item-folder {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+}
+
+.item-folder:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.item-delete svg,
+.item-folder svg {
+    width: 20px;
+    height: 20px;
 }
 
 .result-item {
@@ -1190,7 +1603,33 @@ body {
 
 .tutorial-dots .dot.active {
     background: var(--primary);
-    width: 24px;
+    transform: scale(1.2);
+}
+
+.tutorial-action-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all var(--transition-fast);
+}
+
+.tutorial-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.tutorial-folder-path {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-family: monospace;
+    background: var(--surface-hover);
+    padding: 4px 8px;
     border-radius: 4px;
 }
 
@@ -1247,4 +1686,870 @@ body {
 .tutorial-btn.primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* =========================================
+   Spotify Section
+   ========================================= */
+
+/* Spotify color variable */
+:root {
+    --spotify-green: #1DB954;
+    --spotify-green-dark: #1aa34a;
+    --spotify-green-glow: rgba(29, 185, 84, 0.3);
+}
+
+/* Spotify Tab Active State */
+.mode-tab#tab-spotify.active {
+    background: rgba(29, 185, 84, 0.15);
+    border-color: var(--spotify-green);
+    color: var(--spotify-green);
+}
+
+.mode-tab#tab-spotify.active svg {
+    stroke: var(--spotify-green);
+}
+
+.mode-tab#tab-spotify:hover:not(.active) {
+    border-color: var(--spotify-green-glow);
+}
+
+/* Spotify Input Mode */
+#mode-spotify {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#mode-spotify.hidden {
+    display: none;
+}
+
+/* Spotify Playlist Preview */
+.spotify-playlist-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.2s ease;
+}
+
+.spotify-playlist-preview.hidden {
+    display: none;
+}
+
+.spotify-playlist-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--spotify-green), var(--spotify-green-dark));
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.spotify-playlist-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.spotify-playlist-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spotify-playlist-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.spotify-playlist-meta span {
+    color: var(--spotify-green);
+    font-weight: 600;
+}
+
+/* Spotify Track List */
+.spotify-tracks {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.spotify-tracks::-webkit-scrollbar {
+    width: 6px;
+}
+
+.spotify-tracks::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.spotify-track-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0;
+    transition: all var(--transition-fast);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 0;
+}
+
+.spotify-track-item:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.spotify-track-item:last-child {
+    border-bottom: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.spotify-track-item:hover {
+    background: var(--surface-hover);
+    transform: translateX(4px);
+    border-color: transparent;
+}
+
+.spotify-track-item.downloading {
+    border-color: var(--spotify-green);
+    background: rgba(29, 185, 84, 0.05);
+}
+
+.spotify-track-item.completed {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.spotify-track-item.error {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+/* Checkbox */
+.spotify-track-check {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--spotify-green);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Track Number */
+.spotify-track-num {
+    width: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* Track Info */
+.spotify-track-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.spotify-track-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spotify-track-artist {
+    font-size: 11px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+/* Track Status */
+.spotify-track-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 80px;
+    justify-content: flex-end;
+}
+
+.spotify-track-status svg {
+    width: 16px;
+    height: 16px;
+}
+
+.spotify-track-status .check-icon {
+    stroke: var(--success);
+}
+
+.spotify-track-status .error-icon {
+    stroke: var(--error);
+}
+
+.spotify-track-status .loading-icon {
+    stroke: var(--spotify-green);
+    animation: spin 1s linear infinite;
+}
+
+/* Progress bar for individual track */
+.spotify-track-progress {
+    width: 60px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.spotify-track-progress-bar {
+    height: 100%;
+    background: var(--spotify-green);
+    transition: width 0.2s ease;
+}
+
+/* Spotify Actions */
+.spotify-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+}
+
+.spotify-select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.spotify-select-all input {
+    accent-color: var(--spotify-green);
+}
+
+/* Action Column */
+.spotify-track-actions-col {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 12px;
+}
+
+/* Individual Action Button */
+.spotify-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.spotify-action-btn:hover {
+    background: var(--surface-hover);
+    transform: scale(1.1);
+}
+
+/* Download State (Green Arrow) */
+.spotify-action-btn.download {
+    color: var(--spotify-green);
+    background: rgba(29, 185, 84, 0.1);
+}
+
+.spotify-action-btn.download:hover {
+    background: var(--spotify-green);
+    color: white;
+    box-shadow: 0 2px 8px var(--spotify-green-glow);
+}
+
+/* Cancel State (Red X) */
+.spotify-action-btn.cancel {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.spotify-action-btn.cancel:hover {
+    background: var(--error);
+    color: white;
+}
+
+/* Completed State (Checkmark) */
+.spotify-action-btn.completed {
+    color: var(--success);
+    cursor: default;
+}
+
+/* Error State (Retry) */
+.spotify-action-btn.error {
+    color: var(--warning);
+}
+
+.spotify-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.spotify-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spotify-download-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--spotify-green), #1ed760);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 20px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.spotify-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--spotify-green-glow);
+}
+
+.spotify-download-btn:disabled {
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.spotify-cancel-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: #ff4444;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.spotify-cancel-btn:hover {
+    background: rgba(255, 68, 68, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.2);
+}
+
+.spotify-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.spotify-clear-btn span {
+    display: none;
+    /* Icon only */
+}
+
+.spotify-clear-btn:hover {
+    background: var(--surface-light);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.spotify-download-btn svg,
+.spotify-cancel-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.spotify-clear-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Loading state for parse */
+.spotify-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.spotify-loading svg {
+    width: 40px;
+    height: 40px;
+    stroke: var(--spotify-green);
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+.spotify-loading p {
+    font-size: 13px;
+}
+
+/* Empty state */
+.spotify-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* Hide states properly */
+.spotify-empty.hidden,
+.spotify-loading.hidden,
+.spotify-playlist-preview.hidden,
+.spotify-tracks.hidden,
+.spotify-actions.hidden {
+    display: none !important;
+}
+
+/* Spotify content container - enable scroll */
+#spotify-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
+}
+
+/* Spotify tracks list - scrollable */
+.spotify-tracks {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+    padding-right: 8px;
+}
+
+.spotify-empty svg {
+    width: 48px;
+    height: 48px;
+    stroke: var(--spotify-green);
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
+
+.spotify-empty p {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.spotify-empty small {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* =========================================
+   Animaciones Mejoradas para Spotify
+   ========================================= */
+
+/* Animación de entrada para playlist preview */
+.spotify-playlist-preview {
+    animation: fadeInUp 0.3s var(--transition-normal);
+}
+
+/* Animación de entrada para tracks */
+.spotify-track-item {
+    animation: fadeInUp 0.3s var(--transition-normal);
+    animation-fill-mode: both;
+}
+
+/* Stagger effect para tracks - cada item entra con delay */
+.spotify-track-item:nth-child(1) {
+    animation-delay: 0.02s;
+}
+
+.spotify-track-item:nth-child(2) {
+    animation-delay: 0.04s;
+}
+
+.spotify-track-item:nth-child(3) {
+    animation-delay: 0.06s;
+}
+
+.spotify-track-item:nth-child(4) {
+    animation-delay: 0.08s;
+}
+
+.spotify-track-item:nth-child(5) {
+    animation-delay: 0.1s;
+}
+
+.spotify-track-item:nth-child(6) {
+    animation-delay: 0.12s;
+}
+
+.spotify-track-item:nth-child(7) {
+    animation-delay: 0.14s;
+}
+
+.spotify-track-item:nth-child(8) {
+    animation-delay: 0.16s;
+}
+
+.spotify-track-item:nth-child(9) {
+    animation-delay: 0.18s;
+}
+
+.spotify-track-item:nth-child(10) {
+    animation-delay: 0.2s;
+}
+
+/* Track hover con transición suave */
+.spotify-track-item {
+    transition: all var(--transition-normal);
+}
+
+.spotify-track-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Animación de descarga en progreso */
+.spotify-track-item.downloading {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.spotify-track-item.completed {
+    animation: none;
+}
+
+/* Animación de entrada para el contenedor de acciones */
+.spotify-actions {
+    animation: fadeInUp 0.4s var(--transition-normal);
+    animation-delay: 0.2s;
+    animation-fill-mode: both;
+}
+
+/* Animación para el botón de descarga */
+.spotify-download-btn {
+    transition: all var(--transition-bounce);
+}
+
+.spotify-download-btn:hover:not(:disabled) {
+    animation: bounce 0.5s ease;
+}
+
+/* Animación para el loading */
+.spotify-loading {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Animación de tabs */
+.mode-tab {
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.mode-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: currentColor;
+    transition: all var(--transition-normal);
+    transform: translateX(-50%);
+}
+
+.mode-tab.active::after {
+    width: 60%;
+}
+
+.mode-tab:hover:not(.active) {
+    transform: translateY(-2px);
+}
+
+/* Animación input mode */
+.input-mode {
+    animation: fadeIn 0.25s ease;
+}
+
+/* Animación de iconos en hover */
+.mode-tab svg,
+.result-btn svg,
+.folder-btn svg {
+    transition: transform var(--transition-fast);
+}
+
+.mode-tab:hover svg,
+.result-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* Mejoras para el checkbox */
+.spotify-track-check {
+    transition: transform var(--transition-fast);
+}
+
+.spotify-track-check:hover {
+    transform: scale(1.15);
+}
+
+/* Animación de progress bar */
+.spotify-track-progress-bar {
+    transition: width 0.3s ease-out;
+    background: linear-gradient(90deg, var(--spotify-green) 0%, #1ed760 100%);
+}
+
+/* =========================================
+   Media Queries - Responsive Design
+   ========================================= */
+
+/* Pantallas pequeñas (< 600px altura) */
+@media (max-height: 600px) {
+    .main-content {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .download-section {
+        gap: 8px;
+    }
+
+    .mode-tabs {
+        margin-bottom: 2px;
+    }
+
+    .mode-tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .input-row input {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .folder-row {
+        padding: 8px 10px;
+    }
+
+    .format-toggle {
+        margin-top: 8px;
+    }
+
+    .format-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .spotify-tracks {
+        max-height: 180px;
+    }
+
+    .spotify-track-item {
+        padding: 8px 10px;
+    }
+
+    .downloads-section {
+        min-height: 120px;
+    }
+
+    .section-header {
+        padding: 10px 12px;
+    }
+
+    /* Ocultar texto en tabs, solo iconos */
+    .mode-tab span {
+        display: none;
+    }
+
+    .mode-tab {
+        padding: 10px 16px;
+    }
+
+    .mode-tab svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Pantallas muy pequeñas (< 500px altura) */
+@media (max-height: 500px) {
+    .title-bar {
+        padding: 4px 10px;
+    }
+
+    .main-content {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .video-preview,
+    .spotify-playlist-preview {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .preview-thumb,
+    .spotify-playlist-thumb {
+        width: 50px;
+        height: 50px;
+    }
+
+    .spotify-tracks {
+        max-height: 140px;
+    }
+
+    .spotify-actions {
+        padding-top: 8px;
+        margin-top: 4px;
+    }
+
+    .tutorial-modal {
+        padding: 16px;
+        max-width: 90%;
+    }
+}
+
+/* Pantallas anchas (> 800px ancho) */
+@media (min-width: 800px) {
+    .main-content {
+        padding: 24px 32px;
+        gap: 20px;
+    }
+
+    .input-row {
+        gap: 16px;
+    }
+
+    .input-row input {
+        padding: 16px 20px;
+        font-size: 15px;
+    }
+
+    .download-btn {
+        padding: 16px 28px;
+        font-size: 15px;
+    }
+
+    .spotify-tracks {
+        max-height: 350px;
+    }
+
+    .spotify-track-item {
+        padding: 12px 16px;
+    }
+
+    .spotify-track-name {
+        font-size: 14px;
+    }
+}
+
+/* Pantallas estrechas (< 450px ancho) */
+@media (max-width: 450px) {
+    .main-content {
+        padding: 10px;
+    }
+
+    .mode-tabs {
+        gap: 4px;
+    }
+
+    .mode-tab {
+        padding: 8px 10px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .mode-tab svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .input-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .input-row input {
+        width: 100%;
+        order: 1;
+    }
+
+    .paste-btn {
+        order: 2;
+        flex: 1;
+    }
+
+    .download-btn,
+    .search-btn {
+        order: 3;
+        flex: 2;
+    }
+
+    .format-toggle {
+        flex-wrap: wrap;
+    }
+
+    .format-btn {
+        min-width: calc(50% - 4px);
+    }
+
+    .folder-row span {
+        font-size: 11px;
+    }
+
+    .spotify-track-num {
+        display: none;
+    }
+
+    .spotify-track-check {
+        width: 16px;
+        height: 16px;
+    }
+
+    .spotify-actions {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .spotify-download-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }

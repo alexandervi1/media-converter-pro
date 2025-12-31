@@ -70,9 +70,44 @@ function isValidFormat(format, validFormats) {
     return validFormats.includes(format);
 }
 
+/**
+ * Patrones de URL de Spotify
+ */
+const SPOTIFY_URL_PATTERNS = [
+    /open\.spotify\.com\/playlist\/[a-zA-Z0-9]+/,
+    /open\.spotify\.com\/album\/[a-zA-Z0-9]+/,
+    /spotify\.link\/[a-zA-Z0-9]+/
+];
+
+/**
+ * Verifica si una URL es válida de Spotify
+ * @param {string} url - URL a validar
+ * @returns {boolean} true si es URL válida de Spotify
+ */
+function isValidSpotifyUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return SPOTIFY_URL_PATTERNS.some(pattern => pattern.test(url));
+}
+
+/**
+ * Extrae el ID y tipo de una URL de Spotify
+ * @param {string} url - URL de Spotify
+ * @returns {{type: string, id: string}|null}
+ */
+function extractSpotifyId(url) {
+    if (!url) return null;
+    const match = url.match(/open\.spotify\.com\/(playlist|album)\/([a-zA-Z0-9]+)/);
+    if (match) {
+        return { type: match[1], id: match[2] };
+    }
+    return null;
+}
+
 module.exports = {
     isValidYouTubeUrl,
     extractVideoId,
     sanitizeFileName,
-    isValidFormat
+    isValidFormat,
+    isValidSpotifyUrl,
+    extractSpotifyId
 };

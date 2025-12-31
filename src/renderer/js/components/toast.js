@@ -1,57 +1,25 @@
-'use strict';
+export class ToastComponent {
+    constructor() {
+        this.el = document.getElementById('toast');
+        this.messageEl = document.getElementById('toast-message');
 
-/**
- * Componente Toast para notificaciones
- * @module renderer/components/toast
- */
-
-let toastTimeout = null;
-
-/**
- * Muestra un toast de notificación
- * @param {string} message - Mensaje a mostrar
- * @param {string} type - Tipo: 'success' | 'error' | 'warning'
- * @param {number} duration - Duración en ms (default: 3000)
- */
-function showToast(message, type = 'success', duration = 3000) {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-
-    if (!toast || !toastMessage) return;
-
-    // Limpiar timeout anterior
-    if (toastTimeout) {
-        clearTimeout(toastTimeout);
+        // Exponer globalmente para convivir con codigo anterior
+        window.showToast = this.show.bind(this);
     }
 
-    // Actualizar contenido y estilo
-    toastMessage.textContent = message;
-    toast.className = `toast show ${type}`;
+    show(message, type = 'success') {
+        if (!this.el || !this.messageEl) {
+            console.log(`[Toast ${type}] ${message}`);
+            return;
+        }
 
-    // Auto-ocultar después de la duración
-    toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-    }, duration);
-}
+        this.messageEl.textContent = message;
+        this.el.className = `toast ${type} show`;
 
-/**
- * Oculta el toast inmediatamente
- */
-function hideToast() {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        toast.classList.remove('show');
+        if (this.timeout) clearTimeout(this.timeout);
+
+        this.timeout = setTimeout(() => {
+            this.el.classList.remove('show');
+        }, 3000);
     }
-    if (toastTimeout) {
-        clearTimeout(toastTimeout);
-        toastTimeout = null;
-    }
-}
-
-// Exportar
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { showToast, hideToast };
-} else {
-    window.showToast = showToast;
-    window.hideToast = hideToast;
 }

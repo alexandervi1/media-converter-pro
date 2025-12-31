@@ -121,7 +121,47 @@ const electronAPI = {
     // =====================================
 
     minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
-    closeWindow: () => ipcRenderer.invoke('window:close')
+    closeWindow: () => ipcRenderer.invoke('window:close'),
+
+    // =====================================
+    // Spotify
+    // =====================================
+
+    /**
+     * Parsea una playlist de Spotify
+     */
+    parseSpotifyPlaylist: (url) =>
+        ipcRenderer.invoke('spotify:parse-playlist', { url }),
+
+    /**
+     * Descarga canciones de una playlist de Spotify
+     */
+    downloadSpotifyPlaylist: (tracks, format = 'mp3', folder = null) =>
+        ipcRenderer.invoke('spotify:download-playlist', { tracks, format, folder }),
+
+    /**
+     * Cancela las descargas de Spotify pendientes
+     */
+    cancelSpotifyDownload: () =>
+        ipcRenderer.invoke('spotify:cancel'),
+
+    /**
+     * Escucha progreso de descargas de Spotify
+     */
+    onSpotifyProgress: (callback) =>
+        ipcRenderer.on('spotify:progress', (_, data) => callback(data)),
+
+    /**
+     * Escucha cuando termina la descarga de Spotify
+     */
+    onSpotifyComplete: (callback) =>
+        ipcRenderer.on('spotify:complete', (_, data) => callback(data)),
+
+    // =====================================
+    // Settings
+    // =====================================
+    getSettings: () => ipcRenderer.invoke('settings:get'),
+    saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings)
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

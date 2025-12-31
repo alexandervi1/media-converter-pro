@@ -6,6 +6,7 @@ const { createMainWindow, getMainWindow } = require('./window');
 const { registerYouTubeHandlers } = require('./ipc/youtube');
 const { registerConverterHandlers } = require('./ipc/converter');
 const { registerFileHandlers } = require('./ipc/files');
+const { registerSpotifyHandlers } = require('./ipc/spotify');
 const logger = require('./utils/logger');
 
 // Configurar FFmpeg path globalmente - diferente en desarrollo vs producción
@@ -24,6 +25,7 @@ async function initializeApp() {
     registerYouTubeHandlers();
     registerConverterHandlers();
     registerFileHandlers();
+    registerSpotifyHandlers();
 
     // Crear la ventana principal
     createMainWindow();

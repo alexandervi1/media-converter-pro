@@ -1,6 +1,6 @@
 {
   "name": "media-converter-pro",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Aplicación de escritorio premium para descargar videos de YouTube y convertir archivos multimedia. Soporta MP3, MP4, WAV y más formatos.",
   "main": "src/main/index.js",
   "author": {
