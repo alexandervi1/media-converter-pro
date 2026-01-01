@@ -5,127 +5,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' https:">
+        content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:">
     <title>Media Converter Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
-    <div class="app-container">
+    <div class="app">
         <!-- Custom Title Bar -->
-        <div class="title-bar">
-            <div class="title-bar-logo">
+        <header class="titlebar">
+            <div class="titlebar-logo">
                 <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10" />
-                    <polygon points="10,8 16,12 10,16" />
+                    <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
                 </svg>
                 <span>Media Converter Pro</span>
             </div>
-            <div class="title-bar-controls">
-                <button class="title-btn minimize" id="btn-minimize" title="Minimizar">
-                    <svg viewBox="0 0 24 24">
+            <div class="titlebar-controls">
+                <button class="titlebar-btn" id="btn-minimize" title="Minimizar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                 </button>
-                <button class="title-btn close" id="btn-close" title="Cerrar">
-                    <svg viewBox="0 0 24 24">
+                <button class="titlebar-btn close" id="btn-close" title="Cerrar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="6" y1="6" x2="18" y2="18" />
                         <line x1="6" y1="18" x2="18" y2="6" />
                     </svg>
                 </button>
             </div>
-        </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" id="tab-home" data-tab="home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span>Inicio</span>
+            </button>
+            <button class="tab" id="tab-search" data-tab="search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <span>Buscar</span>
+            </button>
+            <button class="tab" id="tab-spotify" data-tab="spotify">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 15c2-1 5-1 8 1" />
+                    <path d="M9 12c1.5-.8 4-.8 6 .5" />
+                    <path d="M10 9c1.2-.5 3-.5 4 .3" />
+                </svg>
+                <span>Spotify</span>
+            </button>
+            <button class="tab" id="tab-downloads" data-tab="downloads">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>Descargas</span>
+                <span class="tab-badge" id="downloads-badge"></span>
+            </button>
+        </nav>
 
         <!-- Main Content -->
-        <div class="main-content">
-            <!-- Download Section -->
-            <section class="download-section">
-                <!-- Mode Tabs -->
-                <div class="mode-tabs">
-                    <button class="mode-tab active" id="tab-url" data-mode="url">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                        </svg>
-                        <span>Link</span>
-                    </button>
-                    <button class="mode-tab" id="tab-search" data-mode="search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.35-4.35" />
-                        </svg>
-                        <span>Buscar</span>
-                    </button>
-                    <button class="mode-tab" id="tab-spotify" data-mode="spotify">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 15c2-1 5-1 8 1" />
-                            <path d="M9 12c1.5-.8 4-.8 6 .5" />
-                            <path d="M10 9c1.2-.5 3-.5 4 .3" />
-                        </svg>
-                        <span>Spotify</span>
-                    </button>
-                    <button class="mode-tab" id="tab-downloads" data-mode="downloads">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        <span>Descargas</span>
-                        <span class="tab-badge" id="tab-downloads-badge"></span>
-                    </button>
-                </div>
+        <main class="content">
+            <!-- HOME TAB -->
+            <section class="panel active" id="panel-home">
+                <div class="home-content">
+                    <!-- Instruction -->
+                    <p class="home-instruction">Pega un link de YouTube para comenzar</p>
 
-                <!-- Flying element for throw animation -->
-                <div class="flying-element" id="flying-element">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18V5l12-2v13" />
-                        <circle cx="6" cy="18" r="3" />
-                        <circle cx="18" cy="16" r="3" />
-                    </svg>
-                </div>
-
-                <!-- URL Input Mode -->
-                <div class="input-mode" id="mode-url">
-                    <div class="input-row">
-                        <input type="text" id="url-input" placeholder="Pega el link de YouTube aquí..."
-                            autocomplete="off" spellcheck="false">
-                        <button class="paste-btn" id="btn-paste" title="Pegar desde portapapeles (Ctrl+V)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                            </svg>
-                        </button>
-                        <button class="download-btn" id="btn-download">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            <span>Descargar</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search Mode -->
-                <div class="input-mode hidden" id="mode-search">
-                    <div class="input-row">
-                        <input type="text" id="search-input" placeholder="Buscar artista, canción..." autocomplete="off"
-                            spellcheck="false">
-                        <button class="search-btn" id="btn-search">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
-                            <span>Buscar</span>
-                        </button>
+                    <!-- URL Input -->
+                    <div class="input-group">
+                        <input type="text" class="url-input" id="url-input"
+                            placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false">
                     </div>
 
-                    <!-- Search Toolbar (Format + Folder) -->
-                    <div class="compact-toolbar" id="search-toolbar">
-                        <div class="toolbar-format">
-                            <button class="toolbar-btn active" id="search-btn-mp3" data-format="mp3"
-                                title="MP3 320kbps">
+                    <!-- Paste Button -->
+                    <button class="btn-primary btn-large" id="btn-paste">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                        </svg>
+                        <span>PEGAR LINK</span>
+                    </button>
+
+                    <!-- Loading State -->
+                    <div class="loading-state hidden" id="loading-state">
+                        <div class="spinner"></div>
+                        <span>Obteniendo información...</span>
+                    </div>
+
+                    <!-- Video Preview -->
+                    <div class="video-preview hidden" id="video-preview">
+                        <img src="" alt="" class="preview-thumb" id="preview-thumb">
+                        <div class="preview-info">
+                            <p class="preview-title" id="preview-title">Título del video</p>
+                            <p class="preview-channel" id="preview-channel">Canal</p>
+                        </div>
+                    </div>
+
+                    <!-- Format Selector -->
+                    <div class="format-selector hidden" id="format-selector">
+                        <span class="format-label">Formato:</span>
+                        <div class="format-buttons">
+                            <button class="format-btn active" data-format="mp3" id="btn-format-mp3">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M9 18V5l12-2v13" />
                                     <circle cx="6" cy="18" r="3" />
@@ -133,359 +125,158 @@
                                 </svg>
                                 <span>MP3</span>
                             </button>
-                            <button class="toolbar-btn" id="search-btn-m4a" data-format="m4a" title="Audio AAC rápido">
+                            <button class="format-btn" data-format="mp4" id="btn-format-mp4">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                    <line x1="7" y1="2" x2="7" y2="22" />
+                                    <line x1="17" y1="2" x2="17" y2="22" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <line x1="2" y1="7" x2="7" y2="7" />
+                                    <line x1="2" y1="17" x2="7" y2="17" />
+                                    <line x1="17" y1="17" x2="22" y2="17" />
+                                    <line x1="17" y1="7" x2="22" y2="7" />
                                 </svg>
-                                <span>Audio</span>
-                            </button>
-                            <button class="toolbar-btn" id="search-btn-video" data-format="mp4" title="Video MP4">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="2" y="2" width="20" height="20" rx="2" />
-                                    <polygon points="10 8 16 12 10 16 10 8" />
-                                </svg>
-                                <span>Video</span>
+                                <span>MP4</span>
                             </button>
                         </div>
-                        <div class="toolbar-divider"></div>
-                        <button class="toolbar-folder" id="search-folder-btn" title="Carpeta de descargas">
+                    </div>
+
+                    <!-- Download Button -->
+                    <button class="btn-success btn-mega hidden" id="btn-download">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span id="download-text">DESCARGAR MP3</span>
+                    </button>
+
+                    <!-- Folder Selector -->
+                    <button class="folder-selector" id="folder-selector">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span id="folder-path">Seleccionar carpeta...</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- SEARCH TAB -->
+            <section class="panel" id="panel-search">
+                <div class="search-content">
+                    <!-- Search Input -->
+                    <div class="input-group">
+                        <input type="text" class="url-input" id="search-input" placeholder="Buscar canción, artista..."
+                            autocomplete="off" spellcheck="false">
+                        <button class="btn-icon" id="btn-search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.35-4.35" />
                             </svg>
-                            <span id="search-folder-name">Carpeta...</span>
                         </button>
                     </div>
 
                     <!-- Search Results -->
                     <div class="search-results" id="search-results">
-                        <div class="search-empty" id="search-empty">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
-                            <p>Busca canciones para descargar</p>
-                        </div>
-                        <div class="results-list" id="results-list"></div>
-                    </div>
-                </div>
-
-                <!-- Spotify Mode -->
-                <div class="input-mode hidden" id="mode-spotify">
-                    <div class="input-row">
-                        <input type="text" id="spotify-input" placeholder="Pega el link de una playlist de Spotify..."
-                            autocomplete="off" spellcheck="false">
-                        <button class="paste-btn" id="btn-paste-spotify" title="Pegar desde portapapeles">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                            </svg>
-                        </button>
-                        <button class="search-btn" id="btn-parse-spotify" style="background: var(--spotify-green);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 15c2-1 5-1 8 1" />
-                            </svg>
-                            <span>Obtener</span>
-                        </button>
-                    </div>
-
-                    <!-- Spotify Toolbar (Format + Folder) -->
-                    <div class="compact-toolbar" id="spotify-toolbar">
-                        <div class="toolbar-format">
-                            <button class="toolbar-btn active" id="spotify-btn-mp3" data-format="mp3"
-                                title="MP3 320kbps">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 18V5l12-2v13" />
-                                    <circle cx="6" cy="18" r="3" />
-                                    <circle cx="18" cy="16" r="3" />
-                                </svg>
-                                <span>MP3</span>
-                            </button>
-                            <button class="toolbar-btn" id="spotify-btn-m4a" data-format="m4a" title="Audio AAC rápido">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                                </svg>
-                                <span>Audio</span>
-                            </button>
-                        </div>
-                        <div class="toolbar-divider"></div>
-                        <button class="toolbar-folder" id="spotify-folder-btn" title="Carpeta de descargas">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                            </svg>
-                            <span id="spotify-folder-name">Carpeta...</span>
-                        </button>
-                    </div>
-
-                    <!-- Spotify Content Container -->
-                    <div id="spotify-content">
-                        <!-- Empty State -->
-                        <div class="spotify-empty" id="spotify-empty">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 15c2-1 5-1 8 1" />
-                                <path d="M9 12c1.5-.8 4-.8 6 .5" />
-                                <path d="M10 9c1.2-.5 3-.5 4 .3" />
-                            </svg>
-                            <p>Pega el link de una playlist pública</p>
-                            <small>Las canciones se descargarán de YouTube</small>
-                        </div>
-
-                        <!-- Loading State -->
-                        <div class="spotify-loading hidden" id="spotify-loading">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                            </svg>
-                            <p>Obteniendo playlist...</p>
-                        </div>
-
-                        <!-- Playlist Preview -->
-                        <div class="spotify-playlist-preview hidden" id="spotify-preview">
-                            <img src="" alt="" class="spotify-playlist-thumb" id="spotify-thumb">
-                            <div class="spotify-playlist-info">
-                                <p class="spotify-playlist-title" id="spotify-title">Playlist</p>
-                                <p class="spotify-playlist-meta"><span id="spotify-count">0</span> canciones</p>
-                            </div>
-                        </div>
-
-                        <!-- Track List -->
-                        <div class="spotify-tracks hidden" id="spotify-tracks"></div>
-
-                        <!-- Actions -->
-                        <div class="spotify-actions hidden" id="spotify-actions">
-                            <label class="spotify-select-all">
-                                <input type="checkbox" id="spotify-select-all" checked>
-                                <span>Seleccionar todas</span>
-                            </label>
-                            <div class="spotify-btn-group">
-                                <button class="spotify-download-btn" id="btn-download-spotify">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    <span>Descargar</span>
-                                </button>
-                                <button class="spotify-cancel-btn hidden" id="btn-cancel-spotify"
-                                    title="Cancelar descargas">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="15" y1="9" x2="9" y2="15" />
-                                        <line x1="9" y1="9" x2="15" y2="15" />
-                                    </svg>
-                                    <span>Cancelar</span>
-                                </button>
-                                <button class="spotify-clear-btn" id="btn-clear-spotify" title="Limpiar playlist">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path
-                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                    <span>Limpiar</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Download Folder -->
-                <div class="folder-row" id="folder-row">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                    </svg>
-                    <span id="folder-path">Seleccionar carpeta...</span>
-                    <div class="folder-actions">
-                        <button class="folder-btn" id="btn-folder">Cambiar</button>
-                        <button class="folder-btn open" id="btn-open-folder" title="Abrir carpeta">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                <polyline points="15 3 21 3 21 9" />
-                                <line x1="10" y1="14" x2="21" y2="3" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Format Toggle -->
-                <div class="format-toggle">
-                    <button class="format-btn active" id="btn-fast" data-format="m4a" title="Audio AAC - Rápido">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                        <span>Audio</span>
-                    </button>
-                    <button class="format-btn" id="btn-mp3" data-format="mp3" title="Audio MP3 320kbps">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 18V5l12-2v13" />
-                            <circle cx="6" cy="18" r="3" />
-                            <circle cx="18" cy="16" r="3" />
-                        </svg>
-                        <span>MP3</span>
-                    </button>
-                    <button class="format-btn" id="btn-video" data-format="mp4" title="Video MP4 720p/1080p">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-                            <line x1="7" y1="2" x2="7" y2="22" />
-                            <line x1="17" y1="2" x2="17" y2="22" />
-                            <line x1="2" y1="12" x2="22" y2="12" />
-                            <line x1="2" y1="7" x2="7" y2="7" />
-                            <line x1="2" y1="17" x2="7" y2="17" />
-                            <line x1="17" y1="17" x2="22" y2="17" />
-                            <line x1="17" y1="7" x2="22" y2="7" />
-                        </svg>
-                        <span>Video</span>
-                    </button>
-                </div>
-
-                <!-- Video Quality Toggle (visible when Video is selected) -->
-                <div class="quality-toggle hidden" id="quality-toggle">
-                    <span class="quality-label">Calidad:</span>
-                    <button class="quality-btn active" id="btn-1080p" data-quality="1080" title="Full HD">1080p</button>
-                    <button class="quality-btn" id="btn-720p" data-quality="720" title="HD">720p</button>
-                    <button class="quality-btn" id="btn-480p" data-quality="480" title="SD">480p</button>
-                </div>
-
-                <!-- Video Preview (hidden until URL pasted) -->
-                <div class="video-preview hidden" id="video-preview">
-                    <img src="" alt="" class="preview-thumb" id="preview-thumb">
-                    <div class="preview-info">
-                        <p class="preview-title" id="preview-title">Cargando...</p>
-                        <p class="preview-channel" id="preview-channel"></p>
+                        <p class="empty-message">Busca canciones para descargar</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Downloads List -->
-            <section class="downloads-section">
-                <div class="section-header">
-                    <h2>
+            <!-- SPOTIFY TAB -->
+            <section class="panel" id="panel-spotify">
+                <div class="spotify-content">
+                    <!-- Spotify Input -->
+                    <div class="input-group">
+                        <input type="text" class="url-input" id="spotify-input"
+                            placeholder="Pega link de playlist de Spotify..." autocomplete="off" spellcheck="false">
+                    </div>
+
+                    <!-- Load Playlist Button -->
+                    <button class="btn-spotify btn-large" id="btn-load-playlist">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 15c2-1 5-1 8 1" />
+                        </svg>
+                        <span>CARGAR PLAYLIST</span>
+                    </button>
+
+                    <!-- Playlist Loading -->
+                    <div class="loading-state hidden" id="spotify-loading">
+                        <div class="spinner spotify"></div>
+                        <span>Cargando playlist...</span>
+                    </div>
+
+                    <!-- Playlist Preview -->
+                    <div class="playlist-preview hidden" id="playlist-preview">
+                        <div class="playlist-header">
+                            <img src="" alt="" class="playlist-cover" id="playlist-cover">
+                            <div class="playlist-info">
+                                <p class="playlist-name" id="playlist-name">Nombre de Playlist</p>
+                                <p class="playlist-count" id="playlist-count">0 canciones</p>
+                            </div>
+                        </div>
+                        <div class="track-list" id="track-list"></div>
+                    </div>
+
+                    <!-- Download All Button -->
+                    <button class="btn-success btn-mega hidden" id="btn-download-playlist">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                             <polyline points="7 10 12 15 17 10" />
                             <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        Descargas <span class="download-count" id="download-count"></span>
-                    </h2>
-                    <div class="header-actions">
-                        <button class="action-btn" id="btn-cache" title="Limpiar cache de yt-dlp">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                <path d="M3 3v5h5" />
-                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                                <path d="M16 21h5v-5" />
-                            </svg>
-                        </button>
-                        <button class="action-btn" id="btn-clear" title="Limpiar historial">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path
-                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="downloads-list" id="downloads-list">
-                    <!-- Empty State -->
-                    <div class="empty-state" id="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 18V5l12-2v13" />
-                            <circle cx="6" cy="18" r="3" />
-                            <circle cx="18" cy="16" r="3" />
-                        </svg>
-                        <p>Pega un link de YouTube para comenzar</p>
-                    </div>
-                    <!-- Download items will be added here dynamically -->
+                        <span id="download-playlist-text">DESCARGAR TODO</span>
+                    </button>
                 </div>
             </section>
+
+            <!-- DOWNLOADS TAB -->
+            <section class="panel" id="panel-downloads">
+                <div class="downloads-content">
+                    <!-- Header -->
+                    <div class="downloads-header">
+                        <h2>Descargas</h2>
+                        <div class="downloads-actions">
+                            <button class="btn-secondary" id="btn-open-folder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                </svg>
+                                <span>Abrir Carpeta</span>
+                            </button>
+                            <button class="btn-ghost" id="btn-clear" title="Limpiar historial">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Downloads List -->
+                    <div class="downloads-list" id="downloads-list">
+                        <p class="empty-message" id="empty-downloads">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Las descargas aparecerán aquí
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div class="toast hidden" id="toast">
+            <p class="toast-message" id="toast-message"></p>
         </div>
     </div>
 
-    <!-- Tutorial Modal -->
-    <div class="tutorial-overlay" id="tutorial-overlay">
-        <div class="tutorial-modal">
-            <div class="tutorial-header">
-                <h2>🎵 ¡Bienvenido a Media Converter Pro!</h2>
-                <p>Descarga música y videos de YouTube fácilmente</p>
-            </div>
-
-            <div class="tutorial-steps" id="tutorial-steps">
-                <!-- Step 1 -->
-                <div class="tutorial-step active" data-step="1">
-                    <div class="step-icon">📋</div>
-                    <h3>1. Pega el Link</h3>
-                    <p>Copia un link de YouTube y pégalo aquí. Usa el botón <strong>📋 Pegar</strong> o presiona
-                        <strong>Ctrl+V</strong>.
-                    </p>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="tutorial-step" data-step="2">
-                    <div class="step-icon">🎯</div>
-                    <h3>2. Elige el Formato</h3>
-                    <p>
-                        <strong>⚡ Audio</strong> - M4A rápido<br>
-                        <strong>🎵 MP3</strong> - 320kbps universal<br>
-                        <strong>🎬 Video</strong> - MP4 HD con audio
-                    </p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="tutorial-step" data-step="3">
-                    <div class="step-icon">🟢</div>
-                    <h3>3. Spotify</h3>
-                    <p>Pega un link de <strong>Spotify</strong> (Playlist, Álbum o Canción) y descarga todo
-                        automáticamente en alta calidad.</p>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="tutorial-step" data-step="4">
-                    <div class="step-icon">📂</div>
-                    <h3>4. Gestión Total</h3>
-                    <p>En la pestaña <strong>Descargas</strong> puedes ver el progreso, cancelar items y abrir la
-                        carpeta con el icono 📂 azul.</p>
-                </div>
-
-                <!-- Step 5 -->
-                <div class="tutorial-step" data-step="5">
-                    <div class="step-icon">⚙️</div>
-                    <h3>5. Configuración</h3>
-                    <p>Para terminar, selecciona dónde quieres guardar tus descargas. ¡Es importante!</p>
-                    <button class="tutorial-action-btn" id="tutorial-select-folder">
-                        Seleccionar Carpeta
-                    </button>
-                    <p class="tutorial-folder-path" id="tutorial-folder-path">No seleccionada</p>
-                </div>
-            </div>
-
-            <div class="tutorial-dots">
-                <span class="dot active" data-step="1"></span>
-                <span class="dot" data-step="2"></span>
-                <span class="dot" data-step="3"></span>
-                <span class="dot" data-step="4"></span>
-                <span class="dot" data-step="5"></span>
-            </div>
-
-            <div class="tutorial-footer">
-                <label class="tutorial-checkbox">
-                    <input type="checkbox" id="tutorial-dont-show">
-                    <span>No mostrar de nuevo</span>
-                </label>
-                <div class="tutorial-buttons">
-                    <button class="tutorial-btn secondary" id="tutorial-skip">Omitir</button>
-                    <button class="tutorial-btn primary" id="tutorial-next">Siguiente</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">
-        <div class="toast-icon"></div>
-        <p class="toast-message" id="toast-message"></p>
-    </div>
-
-    <script type="module" src="js/app.js"></script>
+    <script defer src="js/bundle.js"></script>
 </body>
 
 </html>

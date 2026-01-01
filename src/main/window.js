@@ -22,8 +22,8 @@ const WINDOW_CONFIG = {
     webPreferences: {
         preload: path.join(__dirname, '..', 'preload', 'index.js'),
         contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
+        nodeIntegration: false
+        // sandbox removed - breaks preload in packaged apps
     }
 };
 

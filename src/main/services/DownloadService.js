@@ -139,12 +139,35 @@ class DownloadService {
         if (!thumbnailUrl && info.id) {
             thumbnailUrl = `https://i.ytimg.com/vi/${info.id}/hqdefault.jpg`;
         }
+
+        // Extract available video qualities from formats
+        const standardQualities = [144, 240, 360, 480, 720, 1080, 1440, 2160];
+        let availableQualities = [];
+
+        if (info.formats && Array.isArray(info.formats)) {
+            const heights = new Set();
+            info.formats.forEach(f => {
+                if (f.height && f.vcodec && f.vcodec !== 'none') {
+                    heights.add(f.height);
+                }
+            });
+            // Map to standard qualities (closest match)
+            availableQualities = standardQualities.filter(q => {
+                // Check if this quality or a close one exists
+                for (const h of heights) {
+                    if (Math.abs(h - q) <= 20) return true; // Within 20px tolerance
+                }
+                return false;
+            });
+        }
+
         return {
             url: info.webpage_url || info.url,
             title: info.title,
             duration: info.duration,
             thumbnail: thumbnailUrl,
-            uploader: info.uploader || info.channel
+            uploader: info.uploader || info.channel,
+            availableQualities: availableQualities
         };
     }
 
