@@ -5,11 +5,12 @@
 ![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Runtime](https://img.shields.io/badge/runtime-Bun%20%2F%20Node-black.svg)
 
 **La herramienta definitiva para descargar música y videos**
-YouTube + Spotify en una sola app.
+YouTube + Spotify con Motor de Temas Personalizables en una sola app.
 
-[Características](#características) • [Instalación](#instalación) • [Uso](#uso) • [Arquitectura](#arquitectura)
+[Características](#características) • [Temas Visuales](#-sistema-de-temas-visuales-nuevo) • [Instalación](#instalación) • [Uso](#uso) • [Arquitectura](#arquitectura)
 
 </div>
 
@@ -17,52 +18,54 @@ YouTube + Spotify en una sola app.
 
 ## Características
 
-### 🟢 Spotify Integration (Nuevo)
-- **Playlists Completas** - Descarga cientos de canciones con un click.
-- **Canciones Individuales** - Busca, descarga o cancela track por track.
-- **Alta Calidad** - Metadatos automáticos (Carátula, Artista, Álbum).
+### 🎨 Sistema de Temas Visuales (Nuevo)
+- **🌙 Dark Pro** - El diseño por defecto elegante y moderno.
+- **🌃 Tokyo Night** - Inspirado en el cyberpunk y estética de noche en Tokio.
+- **📻 AIMP Orange** - Estilo reproductor de audio industrial en tono naranja.
+- **🎸 Retro 50s Diner** - Estética nostálgica de los años 50 (*Jukebox & Rockabilly*) con fuentes retro (*Righteous* & *Pacifico*) y botones con relieve.
+- **🍔 Menú Hamburguesa & Tuerquita** - Drawer lateral deslizable con cambio de temas instantáneo y limpiador de caché.
 
-### 🎵 Descarga de Audio
-- **Audio (AAC)** - M4A optimizado para velocidad.
-- **MP3** - 320kbps constante para máxima compatibilidad.
-- **Youtube Search** - Buscador integrado sin salir de la app.
+### 🟢 Spotify Integration
+- **Playlists Completas** - Descarga cientos de canciones con un solo clic.
+- **Canciones Individuales** - Busca, descarga o cancela track por track.
+- **Metadatos Automáticos** - Inserción automática de carátulas HQ, artista y título.
+
+### 🎵 Descarga y Conversión de Audio
+- **MP3 320kbps** - Audio en máxima calidad para la mejor fidelidad sonora.
+- **Youtube Search Avanzado** - Buscador integrado con filtro de alta definición (Audio HQ / VEVO).
 
 ### 🎬 Descarga de Video
-- **MP4** - Calidad seleccionable (1080p / 720p / 480p).
-- **Merge Automático** - Video y audio se combinan sin pérdida.
+- **MP4 Full HD** - Formato MP4 con video e hilos de audio unificados sin pérdida.
 
-### 🎨 Experiencia Premium
-- **Gestión de Descargas** - Pausa, cancela y abre carpetas desde la app.
-- **Diseño Moderno** - Interfaz Glassmorphism fluida y reactiva.
-- **Tutorial Interactivo** - Guía paso a paso para nuevos usuarios.
+### 📐 Diseño y Ventana Ampliada
+- **Ventana Expandida** - Formato panorámico amplio (780x760) para administrar descargas cómodamente.
+- **Alineación Armónica de Botones** - Botones de control, selectores de carpeta e información agrupados de forma limpia.
 
 ---
 
 ## Instalación
 
 ### Ejecutable (Windows)
-1. Descarga el último instalador o ejecutable portable desde `dist/`.
-2. Ejecuta y disfruta. (Requiere conexión a internet para descargar `yt-dlp` en el primer uso).
+1. Descarga el último ejecutable portable `Media Converter Pro-2.1.0-x64.exe` desde las **Releases de GitHub**.
+2. Ejecuta y disfruta (no requiere instalación previa ni permisos especiales).
 
-### Desarrollo
+### Desarrollo Local (con Bun)
 ```bash
-# Copiar repositorio
-git clone <repo>
+# Clonar el repositorio
+git clone https://github.com/alexandervi1/media-converter-pro.git
 cd media-converter-pro
 
-# Instalar Bun (si no lo tienes)
-winget install Oven-sh.Bun
-
-# Instalar dependencias
+# Instalar dependencias con Bun
 bun install
 
-# Iniciar en modo desarrollo
-bun run start
+# Compilar frontend e iniciar en desarrollo
+bun run dev
 ```
 
-### Build
+### Build / Release
 ```bash
-bun run build  # Genera ejecutable en dist/
+# Compilar ejecutable para Windows en /dist
+bun run build:win
 ```
 
 ---
@@ -70,46 +73,41 @@ bun run build  # Genera ejecutable en dist/
 ## Uso
 
 1. **Pegar Link**:
-   - YouTube: Videos o Playlists.
-   - Spotify: Playlist, Álbum o Canción.
+   - **YouTube**: Enlaces de videos individuales o listas de reproducción.
+   - **Spotify**: Enlaces de Playlists, Álbumes o Canciones.
 2. **Seleccionar Formato**:
-   - Audio (M4A), MP3 o Video (MP4).
-3. **Descargar**:
-   - Gestiona todo desde la pestaña **Descargas**.
-
-| Atajo | Acción |
-|-------|--------|
-| `Ctrl+V` | Pegar URL (YouTube/Spotify) |
-| `Escape` | Limpiar input |
+   - `🎵 MP3 320k` (Audio) o `🎬 MP4 Full HD` (Video).
+3. **Cambiar Tema**:
+   - Haz clic en el **Menú Hamburguesa** (arriba a la izquierda) o la **Tuerquita** (arriba a la derecha) para abrir el panel de temas.
 
 ---
 
-## Arquitectura (Refactored)
+## Arquitectura Modular
 
-El proyecto sigue una arquitectura **Controller-Service** modularizada:
+El proyecto sigue una arquitectura limpia **Controller-Service**:
 
 ```
 src/
 ├── main/                     # Backend (Electron Main Process)
 │   ├── index.js              # Entry point & IPC Setup
-│   ├── ipc/                  # Controllers (Manejo de IPC)
-│   │   ├── youtube.js        # Controller principal
-│   │   ├── spotify.js        # Controller Spotify
-│   │   └── files.js          # Controller Archivos
-│   └── services/             # Business Logic (Agnóstico de Electron)
-│       ├── DownloadService.js # Wrapper yt-dlp & ffmpeg
-│       ├── QueueService.js    # Gestión de estado de cola
-│       └── SpotifyService.js  # API Spotify & Parsing
+│   ├── window.js             # Configuración de Ventana (780x760)
+│   ├── ipc/                  # Controllers (Manejo de llamadas IPC)
+│   │   ├── youtube.js        # Controller principal de YouTube y Buscador
+│   │   ├── spotify.js        # Controller de metadatos Spotify
+│   │   └── files.js          # Controller de Archivos y Sistema
+│   └── services/             # Business Logic (Agnóstico de UI)
+│       ├── DownloadService.js # Motor de yt-dlp & FFmpeg
+│       ├── QueueService.js    # Gestión de colas de descarga
+│       └── SpotifyService.js  # Resolución Spotify a YouTube
 ├── preload/
-│   └── index.js              # ContextBridge (API Segura)
-└── renderer/                 # Frontend (Vanilla JS + Components)
+│   └── index.js              # ContextBridge (API IPC Segura)
+└── renderer/                 # Frontend
     ├── js/
-    │   ├── app.js            # Router & State
-    │   ├── components/       # Componentes UI
-    │   │   ├── DownloadList.js
-    │   │   ├── SpotifyComponent.js
-    │   │   └── ToastComponent.js
-    └── css/                  # Estilos (CSS Variables + Flexbox)
+    │   ├── app.js            # Lógica principal, Menú Hamburguesa & Temas
+    │   ├── dom.js            # Mapa centralizado de elementos del DOM
+    │   └── bundle.js         # Renderer bundle compilado con Esbuild
+    └── css/
+        └── styles.css        # Sistema de diseño con CSS Custom Properties (Temas)
 ```
 
 ---
@@ -117,9 +115,9 @@ src/
 ## Tecnologías
 
 - **Electron** - Runtime de escritorio.
-- **yt-dlp** - Motor de descarga core (actualizado automáticamente).
-- **FFmpeg** - Procesamiento multimedia.
-- **Spotify-dl logic** - Resolución de metadatos de Spotify a YouTube.
+- **Bun / Esbuild** - Empaquetado ultrarrápido de scripts y assets.
+- **yt-dlp** - Motor de descarga multimedia core.
+- **FFmpeg** - Procesamiento y conversión de audio/video.
 
 ---
 
