@@ -70,12 +70,6 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "portable",
           "arch": [
             "x64"
@@ -83,6 +77,7 @@
         }
       ],
       "icon": "build/icon.png",
+      "signAndEditExecutable": false,
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "mac": {
