@@ -45,7 +45,7 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
     }
 
     // Filtrar solo tracks seleccionados
-    const selectedTracks = tracks.filter(t => t.selected !== false);
+    const selectedTracks = tracks.filter((t) => t.selected !== false);
 
     if (selectedTracks.length === 0) {
         return { success: false, message: 'No hay canciones seleccionadas' };
@@ -57,7 +57,7 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
     // Nota: Añadimos 'searchQuery' o 'artist'/'name' para que el procesador lo resuelva
     let addedCount = 0;
 
-    selectedTracks.forEach(track => {
+    selectedTracks.forEach((track) => {
         // Creamos un item en la cola sin URL, pero con metadata para búsqueda
         QueueService.add({
             url: null, // Se resolverá despues
@@ -80,7 +80,7 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
     // Trigger processing si no está corriendo
     // Invocamos el handler start-queue indirectamente o lo dejamos al usuario?
     // UX: Mejor iniciar automáticamente.
-    // Como processQueueLoop está en youtube.js (que es el controller principal), 
+    // Como processQueueLoop está en youtube.js (que es el controller principal),
     // lo ideal sería llamar a esa función expuesta.
     // PERO youtube.js no exporta processQueueLoop.
 
@@ -88,7 +88,7 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
     // OPCIÓN B: Emitimos un evento interno o requerimos youtube.js (circular dependency risk).
     // OPCIÓN C: QueueService tiene un Listener? No.
 
-    // Vamos a enviar un mensaje al Renderer para que él solicite iniciar la cola? 
+    // Vamos a enviar un mensaje al Renderer para que él solicite iniciar la cola?
     // O simplemente confiamos en que el usuario vea la cola llena en la otra pestaña.
     // El comportamiento original era "click download -> starts processing".
 
@@ -110,7 +110,8 @@ function sendQueueUpdate() {
         // Enviamos el mismo evento que youtube.js para actualizar la lista principal
         mainWindow.webContents.send('youtube:queue-update', {
             queue: QueueService.getAll(),
-            downloadFolder: require('../utils/config').loadConfig().downloadFolder || app.getPath('downloads')
+            downloadFolder:
+                require('../utils/config').loadConfig().downloadFolder || app.getPath('downloads')
         });
     }
 }

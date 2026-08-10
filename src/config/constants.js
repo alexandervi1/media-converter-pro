@@ -27,18 +27,18 @@ const QUALITIES = Object.freeze({
  * Timeouts en milisegundos
  */
 const TIMEOUTS = Object.freeze({
-    VIDEO_INFO: 10000,      // Timeout para obtener info del video
-    SOCKET: 15000,          // Timeout de socket para yt-dlp
-    DOWNLOAD: 300000        // Timeout máximo de descarga (5 min)
+    VIDEO_INFO: 10000, // Timeout para obtener info del video
+    SOCKET: 15000, // Timeout de socket para yt-dlp
+    DOWNLOAD: 300000 // Timeout máximo de descarga (5 min)
 });
 
 /**
  * Configuración de descarga
  */
 const DOWNLOAD_CONFIG = Object.freeze({
-    PARALLEL_CONNECTIONS: 4,    // Conexiones paralelas de yt-dlp
-    RETRIES: 5,                 // Reintentos en caso de error
-    AUDIO_BITRATE: '320k'       // Bitrate para MP3
+    PARALLEL_CONNECTIONS: 4, // Conexiones paralelas de yt-dlp
+    RETRIES: 5, // Reintentos en caso de error
+    AUDIO_BITRATE: '320k' // Bitrate para MP3
 });
 
 /**
@@ -66,7 +66,7 @@ const YOUTUBE_URL_PATTERNS = [
  * Extensiones de archivo soportadas para conversión
  */
 const SUPPORTED_EXTENSIONS = Object.freeze({
-    VIDEO: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm'],
+    VIDEO: ['mp4', 'mov', 'mkv', 'flv', 'wmv', 'webm'],
     AUDIO: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac']
 });
 

@@ -29,7 +29,18 @@ const CODECS = {
 /**
  * Extensiones de archivo soportadas para entrada
  */
-const SUPPORTED_EXTENSIONS = ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'mp3', 'wav', 'ogg', 'm4a'];
+const SUPPORTED_EXTENSIONS = [
+    'mp4',
+    'mov',
+    'mkv',
+    'flv',
+    'wmv',
+    'webm',
+    'mp3',
+    'wav',
+    'ogg',
+    'm4a'
+];
 
 /**
  * Registra los handlers IPC para conversión de archivos
@@ -42,7 +53,7 @@ function registerConverterHandlers() {
 
 /**
  * Maneja la conversión de archivos locales
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.inputPath Ruta del archivo de entrada
  * @param {string} params.targetFormat Formato de salida
@@ -82,9 +93,7 @@ async function handleConvertFile(event, { inputPath, targetFormat }) {
     return new Promise((resolve) => {
         const codec = CODECS[targetFormat] || CODECS.mp4;
 
-        let command = ffmpeg(inputPath)
-            .output(filePath)
-            .format(targetFormat);
+        let command = ffmpeg(inputPath).output(filePath).format(targetFormat);
 
         // Aplicar codecs según formato
         if (codec.audio) {
@@ -136,7 +145,7 @@ async function handleConvertFile(event, { inputPath, targetFormat }) {
 
 /**
  * Obtiene metadatos de un archivo multimedia
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.filePath Ruta del archivo
  * @returns {Promise<{success: boolean, metadata?: Object, message?: string}>}
@@ -155,8 +164,8 @@ async function handleGetMetadata(event, { filePath }) {
             }
 
             const format = metadata.format;
-            const videoStream = metadata.streams.find(s => s.codec_type === 'video');
-            const audioStream = metadata.streams.find(s => s.codec_type === 'audio');
+            const videoStream = metadata.streams.find((s) => s.codec_type === 'video');
+            const audioStream = metadata.streams.find((s) => s.codec_type === 'audio');
 
             resolve({
                 success: true,
@@ -165,17 +174,21 @@ async function handleGetMetadata(event, { filePath }) {
                     size: format.size,
                     bitrate: format.bit_rate,
                     format: format.format_name,
-                    video: videoStream ? {
-                        codec: videoStream.codec_name,
-                        width: videoStream.width,
-                        height: videoStream.height,
-                        fps: parseFrameRate(videoStream.r_frame_rate)
-                    } : null,
-                    audio: audioStream ? {
-                        codec: audioStream.codec_name,
-                        channels: audioStream.channels,
-                        sampleRate: audioStream.sample_rate
-                    } : null
+                    video: videoStream
+                        ? {
+                              codec: videoStream.codec_name,
+                              width: videoStream.width,
+                              height: videoStream.height,
+                              fps: parseFrameRate(videoStream.r_frame_rate)
+                          }
+                        : null,
+                    audio: audioStream
+                        ? {
+                              codec: audioStream.codec_name,
+                              channels: audioStream.channels,
+                              sampleRate: audioStream.sample_rate
+                          }
+                        : null
                 }
             });
         });
@@ -205,7 +218,7 @@ function parseFrameRate(frameRate) {
 
 /**
  * Parsea errores de FFmpeg para mensajes amigables
- * @param {string} errorMessage 
+ * @param {string} errorMessage
  * @returns {string}
  */
 function parseFFmpegError(errorMessage) {

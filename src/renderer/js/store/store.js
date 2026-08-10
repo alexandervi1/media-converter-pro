@@ -12,7 +12,7 @@ class Store {
             selectedFormat: 'm4a', // 'm4a', 'mp3', 'mp4'
             selectedQuality: 1080, // 1080, 720, 480
             searchResults: [],
-            currentMode: 'url',    // 'url', 'search', 'spotify', 'downloads'
+            currentMode: 'url', // 'url', 'search', 'spotify', 'downloads'
 
             // Spotify
             spotifyPlaylist: null,

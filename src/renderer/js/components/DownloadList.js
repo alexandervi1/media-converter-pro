@@ -50,7 +50,9 @@ export class DownloadList {
         // Update counts
         if (countBadge) countBadge.textContent = downloads.length > 0 ? downloads.length : '';
         if (tabBadge) {
-            const activeCount = downloads.filter(d => d.status === 'downloading' || d.status === 'converting').length;
+            const activeCount = downloads.filter(
+                (d) => d.status === 'downloading' || d.status === 'converting'
+            ).length;
             tabBadge.textContent = activeCount > 0 ? activeCount : '';
             tabBadge.style.display = activeCount > 0 ? 'flex' : 'none';
         }
@@ -69,10 +71,10 @@ export class DownloadList {
         // Por simplicidad en este paso, usaremos la lógica original de "upsert"
 
         // 1. Marcar todos como no visitados
-        const currentIds = new Set(downloads.map(d => d.id));
+        const currentIds = new Set(downloads.map((d) => d.id));
 
         // 2. Eliminar los que ya no existen
-        Array.from(list.children).forEach(el => {
+        Array.from(list.children).forEach((el) => {
             if (el.id === 'empty-state') return;
             if (!el.dataset.id || !currentIds.has(parseInt(el.dataset.id))) {
                 el.remove();
@@ -80,7 +82,7 @@ export class DownloadList {
         });
 
         // 3. Actualizar o crear
-        downloads.forEach(item => {
+        downloads.forEach((item) => {
             let el = list.querySelector(`.download-item[data-id="${item.id}"]`);
             if (!el) {
                 el = this.createItem(item);
@@ -106,7 +108,7 @@ export class DownloadList {
         if (el.innerHTML !== newHtml) {
             // Optimización fina: update solo barra de progreso si es lo único que cambia
             // Pero por "Hardest to Easiest", vamos a ser robustos primero.
-            // Para evitar parpadeo de imágenes, podríamos ser más selectivos, 
+            // Para evitar parpadeo de imágenes, podríamos ser más selectivos,
             // pero el browser es rápido.
 
             // Mejor: Reusar la lógica selectiva del app.js original para suavidad
@@ -141,14 +143,18 @@ export class DownloadList {
                     ${this.getStatusHtml(item)}
                 </div>
             </div>
-            ${item.status === 'completed' && item.filePath ? `
+            ${
+                item.status === 'completed' && item.filePath
+                    ? `
             <button class="item-folder" data-filepath="${escapeHtml(item.filePath)}" title="Abrir carpeta">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                 </svg>
             </button>
-            ` : ''}
-            <button class="item-delete" data-id="${item.id}" title="${(item.status === 'downloading' || item.status === 'converting') ? 'Cancelar' : 'Eliminar'}">
+            `
+                    : ''
+            }
+            <button class="item-delete" data-id="${item.id}" title="${item.status === 'downloading' || item.status === 'converting' ? 'Cancelar' : 'Eliminar'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
@@ -177,8 +183,10 @@ export class DownloadList {
     }
 
     getIconSvg(status) {
-        if (status === 'completed') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-        if (status === 'error') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+        if (status === 'completed')
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        if (status === 'error')
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
     }
 

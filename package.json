@@ -23,13 +23,13 @@
     "yt-dlp"
   ],
   "scripts": {
-    "start": "npm run bundle:renderer && electron .",
-    "dev": "npm run bundle:renderer && cross-env NODE_ENV=development electron .",
+    "start": "bun run bundle:renderer && electron .",
+    "dev": "bun run bundle:renderer && cross-env NODE_ENV=development electron .",
     "bundle:renderer": "esbuild src/renderer/js/app.js --bundle --outfile=src/renderer/js/bundle.js --format=iife --platform=browser",
-    "build": "npm run bundle:renderer && electron-builder",
-    "build:win": "npm run bundle:renderer && electron-builder --win",
-    "build:mac": "npm run bundle:renderer && electron-builder --mac",
-    "build:linux": "npm run bundle:renderer && electron-builder --linux",
+    "build": "bun run bundle:renderer && electron-builder",
+    "build:win": "bun run bundle:renderer && electron-builder --win",
+    "build:mac": "bun run bundle:renderer && electron-builder --mac",
+    "build:linux": "bun run bundle:renderer && electron-builder --linux",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "format": "prettier --write \"src/**/*.{js,css,html}\""
@@ -109,6 +109,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
   }
 }

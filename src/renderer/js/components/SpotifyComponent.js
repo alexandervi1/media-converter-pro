@@ -20,7 +20,9 @@ export class SpotifyComponent {
 
     initListeners() {
         // Parse Button
-        document.getElementById('btn-parse-spotify')?.addEventListener('click', () => this.handleParse());
+        document
+            .getElementById('btn-parse-spotify')
+            ?.addEventListener('click', () => this.handleParse());
         this.input?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.handleParse();
         });
@@ -42,26 +44,38 @@ export class SpotifyComponent {
         });
 
         // Download Actions
-        document.getElementById('btn-download-spotify')?.addEventListener('click', () => this.handleDownload());
-        document.getElementById('btn-cancel-spotify')?.addEventListener('click', () => this.handleCancel());
-        document.getElementById('btn-clear-spotify')?.addEventListener('click', () => this.handleClear());
+        document
+            .getElementById('btn-download-spotify')
+            ?.addEventListener('click', () => this.handleDownload());
+        document
+            .getElementById('btn-cancel-spotify')
+            ?.addEventListener('click', () => this.handleCancel());
+        document
+            .getElementById('btn-clear-spotify')
+            ?.addEventListener('click', () => this.handleClear());
 
         // Select All
         document.getElementById('spotify-select-all')?.addEventListener('change', (e) => {
             const checked = e.target.checked;
-            const checkboxes = this.tracksContainer?.querySelectorAll('.spotify-track-check:not([disabled])');
-            checkboxes?.forEach(cb => {
+            const checkboxes = this.tracksContainer?.querySelectorAll(
+                '.spotify-track-check:not([disabled])'
+            );
+            checkboxes?.forEach((cb) => {
                 cb.checked = checked;
                 // Actualizar estado visual interno si es necesario
             });
         });
 
         // Toolbar Format (Sync with store)
-        document.getElementById('spotify-btn-mp3')?.addEventListener('click', () => this.setFormat('mp3'));
-        document.getElementById('spotify-btn-m4a')?.addEventListener('click', () => this.setFormat('m4a'));
+        document
+            .getElementById('spotify-btn-mp3')
+            ?.addEventListener('click', () => this.setFormat('mp3'));
+        document
+            .getElementById('spotify-btn-m4a')
+            ?.addEventListener('click', () => this.setFormat('m4a'));
         document.getElementById('spotify-folder-btn')?.addEventListener('click', () => {
             // Reutilizar el diálogo de carpeta del main process
-            window.electronAPI.setDownloadFolder?.().then(res => {
+            window.electronAPI.setDownloadFolder?.().then((res) => {
                 if (res.success) {
                     store.setState({ downloadFolder: res.folder });
                 }
@@ -72,7 +86,7 @@ export class SpotifyComponent {
     setupIPC() {
         this.electronAPI.onSpotifyProgress?.((data) => {
             if (data.queue) {
-                data.queue.forEach(track => this.updateTrackUI(track));
+                data.queue.forEach((track) => this.updateTrackUI(track));
             }
         });
 
@@ -115,14 +129,18 @@ export class SpotifyComponent {
 
         if (thumb) {
             thumb.src = playlist.thumbnail || '';
-            thumb.onerror = () => { thumb.src = ''; };
+            thumb.onerror = () => {
+                thumb.src = '';
+            };
         }
         if (title) title.textContent = playlist.title;
         if (count) count.textContent = playlist.trackCount;
 
         // Render Tracks
         if (this.tracksContainer) {
-            this.tracksContainer.innerHTML = playlist.tracks.map((track, index) => `
+            this.tracksContainer.innerHTML = playlist.tracks
+                .map(
+                    (track, index) => `
                 <div class="spotify-track-item" data-index="${index}" data-track-id="${track.id || index}">
                     <input type="checkbox" class="spotify-track-check" checked>
                     <span class="spotify-track-num">${index + 1}</span>
@@ -141,15 +159,17 @@ export class SpotifyComponent {
 
                     <div class="spotify-track-status"></div>
                 </div>
-            `).join('');
+            `
+                )
+                .join('');
 
             // Listeners for checkboxes
-            this.tracksContainer.querySelectorAll('.spotify-track-check').forEach(cb => {
+            this.tracksContainer.querySelectorAll('.spotify-track-check').forEach((cb) => {
                 cb.addEventListener('change', () => this.updateSelectAllCheckbox());
             });
 
             // Listeners for individual buttons
-            this.tracksContainer.querySelectorAll('.spotify-action-btn').forEach(btn => {
+            this.tracksContainer.querySelectorAll('.spotify-action-btn').forEach((btn) => {
                 btn.addEventListener('click', (e) => {
                     const item = e.target.closest('.spotify-track-item');
                     const index = parseInt(item.dataset.index);
@@ -184,7 +204,7 @@ export class SpotifyComponent {
         // We match by name/artist.
 
         const queueMap = new Map();
-        queue.forEach(q => {
+        queue.forEach((q) => {
             // Create a key based on artist-name
             // If source is spotify, usage of artist/name is cleaner.
             // If not, we try to parse title?
@@ -198,7 +218,7 @@ export class SpotifyComponent {
         });
 
         const items = this.tracksContainer.querySelectorAll('.spotify-track-item');
-        items.forEach(item => {
+        items.forEach((item) => {
             const index = parseInt(item.dataset.index);
             const track = this.currentPlaylist.tracks[index];
             const key = `${track.artist.toLowerCase().trim()}|${track.name.toLowerCase().trim()}`;
@@ -228,7 +248,10 @@ export class SpotifyComponent {
                 btn.classList.add('error');
                 btn.title = 'Reintentar';
                 btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`; // Download icon again
-                btn.onclick = () => this.handleSingleDownload(this.currentPlaylist.tracks[parseInt(item.dataset.index)]);
+                btn.onclick = () =>
+                    this.handleSingleDownload(
+                        this.currentPlaylist.tracks[parseInt(item.dataset.index)]
+                    );
             } else {
                 // Pending/Downloading/Converting -> CANCEL
                 btn.classList.add('cancel');
@@ -288,19 +311,22 @@ export class SpotifyComponent {
     // ... (Existing download/cancel/clear/reset methods remain similar but simplified if logic moves)
     async handleDownload() {
         // ... (Keep existing bulk download logic)
-        const checkboxes = Array.from(this.tracksContainer?.querySelectorAll('.spotify-track-check:checked') || []);
+        const checkboxes = Array.from(
+            this.tracksContainer?.querySelectorAll('.spotify-track-check:checked') || []
+        );
         if (checkboxes.length === 0) {
             this.showToast('Selecciona canciones', 'error');
             return;
         }
 
         const state = store.getState();
-        if (!state.downloadFolder) { // ... existing check 
+        if (!state.downloadFolder) {
+            // ... existing check
             this.showToast('Selecciona una carpeta primero', 'error');
             return;
         }
 
-        const tracksToDownload = checkboxes.map(cb => {
+        const tracksToDownload = checkboxes.map((cb) => {
             const item = cb.closest('.spotify-track-item');
             const index = parseInt(item.dataset.index);
             return this.currentPlaylist.tracks[index];
@@ -328,10 +354,10 @@ export class SpotifyComponent {
     }
 
     handleCancel() {
-        // Just clear selection? Or cancel active? 
+        // Just clear selection? Or cancel active?
         // User asked for individual cancel.
-        // Global cancel button here might just uncheck all? 
-        // Or original logic: this.electronAPI.cancelSpotifyDownload?.(); 
+        // Global cancel button here might just uncheck all?
+        // Or original logic: this.electronAPI.cancelSpotifyDownload?.();
         // We leave it as "Cancel global process" if that existed, or remove.
         // Let's keep existing logic but ensure it resets UI.
         this.resetDownloadButton();
@@ -365,8 +391,10 @@ export class SpotifyComponent {
     setFormat(format) {
         store.setState({ selectedFormat: format });
 
-        ['mp3', 'm4a'].forEach(fmt => {
-            document.getElementById(`spotify-btn-${fmt}`)?.classList.toggle('active', format === fmt);
+        ['mp3', 'm4a'].forEach((fmt) => {
+            document
+                .getElementById(`spotify-btn-${fmt}`)
+                ?.classList.toggle('active', format === fmt);
         });
 
         this.electronAPI.saveSettings({ format });
@@ -376,7 +404,7 @@ export class SpotifyComponent {
         const all = document.querySelectorAll('.spotify-track-check:not([disabled])');
         const checked = document.querySelectorAll('.spotify-track-check:not([disabled]):checked');
         const master = document.getElementById('spotify-select-all');
-        if (master) master.checked = (all.length > 0 && all.length === checked.length);
+        if (master) master.checked = all.length > 0 && all.length === checked.length;
     }
 
     showToast(msg, type) {

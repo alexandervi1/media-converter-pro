@@ -32,9 +32,13 @@ const COLORS = {
  */
 function formatMessage(level, message, args) {
     const timestamp = new Date().toISOString();
-    const argsStr = args.length > 0 ? ' ' + args.map(a =>
-        typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
-    ).join(' ') : '';
+    const argsStr =
+        args.length > 0
+            ? ' ' +
+              args
+                  .map((a) => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)))
+                  .join(' ')
+            : '';
     return `[${timestamp}] [${level}] ${message}${argsStr}`;
 }
 
@@ -54,8 +58,8 @@ function writeToConsole(level, formattedMessage) {
 const logger = {
     /**
      * Log de error
-     * @param {string} message 
-     * @param {...any} args 
+     * @param {string} message
+     * @param {...any} args
      */
     error(message, ...args) {
         const formatted = formatMessage(LOG_LEVELS.ERROR, message, args);
@@ -64,8 +68,8 @@ const logger = {
 
     /**
      * Log de advertencia
-     * @param {string} message 
-     * @param {...any} args 
+     * @param {string} message
+     * @param {...any} args
      */
     warn(message, ...args) {
         const formatted = formatMessage(LOG_LEVELS.WARN, message, args);
@@ -74,8 +78,8 @@ const logger = {
 
     /**
      * Log informativo
-     * @param {string} message 
-     * @param {...any} args 
+     * @param {string} message
+     * @param {...any} args
      */
     info(message, ...args) {
         const formatted = formatMessage(LOG_LEVELS.INFO, message, args);
@@ -84,8 +88,8 @@ const logger = {
 
     /**
      * Log de debug
-     * @param {string} message 
-     * @param {...any} args 
+     * @param {string} message
+     * @param {...any} args
      */
     debug(message, ...args) {
         if (process.env.NODE_ENV === 'development') {

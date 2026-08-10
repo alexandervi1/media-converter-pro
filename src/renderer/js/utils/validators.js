@@ -22,7 +22,7 @@ const YOUTUBE_PATTERNS = [
  */
 function isValidYouTubeUrl(url) {
     if (!url || typeof url !== 'string') return false;
-    return YOUTUBE_PATTERNS.some(pattern => pattern.test(url));
+    return YOUTUBE_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 /**

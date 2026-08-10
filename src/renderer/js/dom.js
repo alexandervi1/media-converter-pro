@@ -11,29 +11,31 @@ const $ = (id) => document.getElementById(id);
  * Referencias a elementos del DOM
  */
 const DOM = {
+    // Menú Hamburguesa & Drawer de Configuración de Temas
+    btnHamburger: $('btn-hamburger'),
+    btnSettingsGear: $('btn-settings-gear'),
+    settingsDrawer: $('settings-drawer'),
+    drawerOverlay: $('drawer-overlay'),
+    btnCloseDrawer: $('btn-close-drawer'),
+
     // Input y botones principales
     urlInput: $('url-input'),
     btnDownload: $('btn-download'),
     btnPaste: $('btn-paste'),
+    downloadBtnText: $('download-btn-text'),
 
     // Carpeta
-    folderRow: $('folder-row'),
     folderPath: $('folder-path'),
     btnFolder: $('btn-folder'),
     btnOpenFolder: $('btn-open-folder'),
 
     // Formato
-    btnFast: $('btn-fast'),
-    btnMp3: $('btn-mp3'),
-    btnVideo: $('btn-video'),
+    formatSelector: $('format-selector'),
+    btnFormatMp3: $('btn-format-mp3'),
+    btnFormatMp4: $('btn-format-mp4'),
 
-    // Calidad
-    qualityToggle: $('quality-toggle'),
-    btn1080p: $('btn-1080p'),
-    btn720p: $('btn-720p'),
-    btn480p: $('btn-480p'),
-
-    // Preview
+    // Preview & Loading
+    loadingState: $('loading-state'),
     videoPreview: $('video-preview'),
     previewThumb: $('preview-thumb'),
     previewTitle: $('preview-title'),
@@ -41,8 +43,8 @@ const DOM = {
 
     // Downloads
     downloadsList: $('downloads-list'),
-    emptyState: $('empty-state'),
-    downloadCount: $('download-count'),
+    downloadsBadge: $('downloads-badge'),
+    emptyDownloads: $('empty-downloads'),
     btnClear: $('btn-clear'),
     btnCache: $('btn-cache'),
 
@@ -55,22 +57,32 @@ const DOM = {
     toastMessage: $('toast-message'),
 
     // Tabs
-    tabUrl: $('tab-url'),
+    tabHome: $('tab-home'),
     tabSearch: $('tab-search'),
-    modeUrl: $('mode-url'),
-    modeSearch: $('mode-search'),
+    tabSpotify: $('tab-spotify'),
+    tabDownloads: $('tab-downloads'),
+
+    panelHome: $('panel-home'),
+    panelSearch: $('panel-search'),
+    panelSpotify: $('panel-spotify'),
+    panelDownloads: $('panel-downloads'),
 
     // Search
     searchInput: $('search-input'),
     btnSearch: $('btn-search'),
-    resultsContainer: $('results-container'),
-    resultsList: $('results-list'),
+    searchResults: $('search-results'),
+    searchFilters: $('search-filters'),
 
-    // Tutorial
-    tutorialOverlay: $('tutorial-overlay'),
-    tutorialNext: $('tutorial-next'),
-    tutorialSkip: $('tutorial-skip'),
-    tutorialDontShow: $('tutorial-dont-show')
+    // Spotify
+    spotifyInput: $('spotify-input'),
+    btnLoadSpotify: $('btn-load-spotify'),
+    spotifyLoading: $('spotify-loading'),
+    playlistPreview: $('playlist-preview'),
+    playlistCover: $('playlist-cover'),
+    playlistName: $('playlist-name'),
+    playlistCount: $('playlist-count'),
+    trackList: $('track-list'),
+    btnDownloadPlaylist: $('btn-download-playlist')
 };
 
 /**

@@ -10,9 +10,9 @@ let mainWindow = null;
  * Configuración de la ventana principal
  */
 const WINDOW_CONFIG = {
-    width: 520,
-    height: 680,
-    minWidth: 480,
+    width: 780,
+    height: 760,
+    minWidth: 600,
     minHeight: 600,
     resizable: true,
     frame: false, // Frameless para diseño custom
@@ -23,7 +23,6 @@ const WINDOW_CONFIG = {
         preload: path.join(__dirname, '..', 'preload', 'index.js'),
         contextIsolation: true,
         nodeIntegration: false
-        // sandbox removed - breaks preload in packaged apps
     }
 };
 

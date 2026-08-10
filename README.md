@@ -50,16 +50,19 @@ YouTube + Spotify en una sola app.
 git clone <repo>
 cd media-converter-pro
 
+# Instalar Bun (si no lo tienes)
+winget install Oven-sh.Bun
+
 # Instalar dependencias
-npm install
+bun install
 
 # Iniciar en modo desarrollo
-npm start
+bun run start
 ```
 
 ### Build
 ```bash
-npm run build  # Genera ejecutable en dist/
+bun run build  # Genera ejecutable en dist/
 ```
 
 ---

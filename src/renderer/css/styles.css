@@ -1,10 +1,11 @@
 /* =========================================
-   Media Converter Pro - New Design System
+   Media Converter Pro - Design System & Themes
    ========================================= */
 
-/* CSS Variables */
-:root {
-    /* Colors */
+/* CSS Variables & Themes */
+:root,
+[data-theme='dark'] {
+    /* Base Dark Theme */
     --bg-primary: #0a1628;
     --bg-secondary: #0f1e36;
     --bg-gradient: linear-gradient(145deg, #0a1628 0%, #0d1321 50%, #0f172a 100%);
@@ -24,34 +25,236 @@
     --success-dark: #059669;
     --success-glow: rgba(16, 185, 129, 0.3);
 
-    --spotify: #1DB954;
+    --spotify: #1db954;
     --spotify-dark: #1aa34a;
 
     --error: #ef4444;
     --warning: #f59e0b;
+    --accent: #8b5cf6;
 
     --text-primary: #f1f5f9;
     --text-secondary: rgba(241, 245, 249, 0.7);
     --text-muted: rgba(241, 245, 249, 0.4);
 
-    /* Spacing */
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --btn-radius: 12px;
+    --btn-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* Tokyo Night Theme */
+[data-theme='tokyo-night'] {
+    --bg-primary: #1a1b26;
+    --bg-secondary: #24283b;
+    --bg-gradient: linear-gradient(145deg, #16161e 0%, #1a1b26 50%, #24283b 100%);
+
+    --surface: rgba(122, 162, 247, 0.08);
+    --surface-hover: rgba(122, 162, 247, 0.16);
+    --surface-active: rgba(122, 162, 247, 0.24);
+
+    --border: rgba(122, 162, 247, 0.2);
+    --border-hover: rgba(187, 154, 247, 0.4);
+
+    --primary: #7aa2f7;
+    --primary-dark: #3d59a1;
+    --primary-glow: rgba(122, 162, 247, 0.4);
+
+    --success: #9ece6a;
+    --success-dark: #739a46;
+    --success-glow: rgba(158, 206, 106, 0.3);
+
+    --spotify: #1abc9c;
+    --spotify-dark: #16a085;
+
+    --error: #f7768e;
+    --warning: #e0af68;
+    --accent: #bb9af7;
+
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --text-muted: #565f89;
+
+    --font-main: 'Inter', sans-serif;
+    --btn-radius: 12px;
+}
+
+/* AIMP Player Orange Theme */
+[data-theme='aimp'] {
+    --bg-primary: #121417;
+    --bg-secondary: #1b1e23;
+    --bg-gradient: linear-gradient(145deg, #0e1012 0%, #181b20 50%, #22262d 100%);
+
+    --surface: rgba(255, 140, 0, 0.08);
+    --surface-hover: rgba(255, 140, 0, 0.16);
+    --surface-active: rgba(255, 140, 0, 0.24);
+
+    --border: rgba(255, 140, 0, 0.25);
+    --border-hover: rgba(255, 165, 0, 0.5);
+
+    --primary: #ff8c00;
+    --primary-dark: #e07b00;
+    --primary-glow: rgba(255, 140, 0, 0.4);
+
+    --success: #ffaa00;
+    --success-dark: #cc8800;
+    --success-glow: rgba(255, 170, 0, 0.4);
+
+    --spotify: #1db954;
+    --spotify-dark: #1aa34a;
+
+    --error: #ff3333;
+    --warning: #ffcc00;
+    --accent: #ff5500;
+
+    --text-primary: #f5f5f7;
+    --text-secondary: #d0d0d5;
+    --text-muted: #808088;
+
+    --font-main: 'Share Tech Mono', monospace;
+    --btn-radius: 6px;
+}
+
+/* 🎸 Retro 50s Rockabilly / Diner Jukebox Theme */
+[data-theme='retro'] {
+    /* Paleta Retro 1950s: Mint Teal, Cherry Red, Cream Yellow, Vintage Gold */
+    --bg-primary: #182d2a;
+    --bg-secondary: #233e3a;
+    --bg-gradient: radial-gradient(circle at center, #2e4d48 0%, #1a332f 60%, #112220 100%);
+
+    --surface: rgba(168, 230, 207, 0.12);
+    --surface-hover: rgba(255, 107, 107, 0.2);
+    --surface-active: rgba(255, 230, 109, 0.25);
+
+    --border: #ffd166;
+    --border-hover: #ff6b6b;
+
+    --primary: #ff6b6b;
+    --primary-dark: #d94b4b;
+    --primary-glow: rgba(255, 107, 107, 0.5);
+
+    --success: #4ecdc4;
+    --success-dark: #3aa8a1;
+    --success-glow: rgba(78, 205, 196, 0.4);
+
+    --spotify: #ffd166;
+    --spotify-dark: #e0b046;
+
+    --error: #ee5253;
+    --warning: #fabca1;
+    --accent: #a8e6cf;
+
+    --text-primary: #fffef0;
+    --text-secondary: #ffeaa7;
+    --text-muted: #81b29a;
+
+    --font-main: 'Righteous', 'Pacifico', cursive, sans-serif;
+    --btn-radius: 20px;
+}
+
+/* Overrides específicos para el Tema Retro 50s Diner */
+[data-theme='retro'] body {
+    background: var(--bg-gradient);
+    letter-spacing: 0.5px;
+}
+
+[data-theme='retro'] .titlebar {
+    background: linear-gradient(90deg, #d94b4b 0%, #ff6b6b 50%, #d94b4b 100%);
+    border-bottom: 3px solid #ffd166;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='retro'] .titlebar-logo span {
+    font-family: 'Pacifico', cursive;
+    font-size: 18px;
+    color: #fffef0;
+    text-shadow: 2px 2px 0px #8b0000;
+}
+
+[data-theme='retro'] .tabs {
+    background: #1e3b37;
+    border-bottom: 3px solid #ffd166;
+}
+
+[data-theme='retro'] .tab {
+    font-family: 'Righteous', cursive;
+    font-size: 13px;
+    color: #a8e6cf;
+    text-transform: uppercase;
+}
+
+[data-theme='retro'] .tab.active {
+    color: #ffd166;
+    border-bottom: 4px solid #ff6b6b;
+    text-shadow: 0 0 8px rgba(255, 209, 102, 0.6);
+}
+
+[data-theme='retro'] button {
+    font-family: 'Righteous', cursive;
+    border-radius: 24px !important;
+    border: 2px solid #ffd166 !important;
+    box-shadow:
+        0 4px 0px #b8860b,
+        0 6px 10px rgba(0, 0, 0, 0.5) !important;
+    transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+[data-theme='retro'] button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 0px #b8860b,
+        0 8px 14px rgba(255, 107, 107, 0.4) !important;
+    border-color: #ff6b6b !important;
+}
+
+[data-theme='retro'] button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px #b8860b !important;
+}
+
+[data-theme='retro'] .btn-primary,
+[data-theme='retro'] .btn-success,
+[data-theme='retro'] .btn-mega {
+    background: linear-gradient(180deg, #ff6b6b 0%, #c0392b 100%) !important;
+    color: #fffef0 !important;
+    text-shadow: 1px 1px 2px #500000;
+}
+
+[data-theme='retro'] .url-input {
+    font-family: 'Righteous', cursive;
+    background: #122421;
+    border: 2px solid #a8e6cf;
+    color: #ffd166;
+    border-radius: 16px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='retro'] .theme-preview.retro-preview {
+    background: linear-gradient(135deg, #182d2a, #ff6b6b, #ffd166);
+}
+
+/* Overrides AIMP */
+[data-theme='aimp'] button {
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Shared Tokens */
+:root {
     --space-xs: 4px;
     --space-sm: 8px;
     --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
 
-    /* Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-full: 9999px;
 
-    /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -67,34 +270,67 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-main, 'Inter', sans-serif);
     background: var(--bg-gradient);
     color: var(--text-primary);
     line-height: 1.5;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    transition:
+        background 0.3s ease,
+        color 0.3s ease;
 }
 
-/* App Container */
+/* App Container (Ampliado para Ventanas Grandes) */
 .app {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    max-width: 520px;
+    width: 100%;
+    max-width: 780px;
     margin: 0 auto;
+    position: relative;
 }
 
 /* =========================================
-   Title Bar
+   Title Bar con Menú Hamburguesa
    ========================================= */
 .titlebar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: var(--space-sm) var(--space-md);
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     -webkit-app-region: drag;
     user-select: none;
+    border-bottom: 1px solid var(--border);
+}
+
+.titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    -webkit-app-region: no-drag;
+}
+
+.menu-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.menu-toggle-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .titlebar-logo {
@@ -145,6 +381,172 @@ body {
 .titlebar-btn svg {
     width: 16px;
     height: 16px;
+}
+
+/* =========================================
+   DRAWER / MENU LATERAL HAMBURGUESA & CONFIG
+   ========================================= */
+.drawer-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.drawer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 340px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer.hidden {
+    transform: translateX(-100%);
+    pointer-events: none;
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--border);
+}
+
+.drawer-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.drawer-title svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+}
+
+.drawer-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+}
+
+.drawer-close:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+}
+
+.drawer-body {
+    flex: 1;
+    padding: var(--space-md);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.theme-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.theme-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.theme-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.theme-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+}
+
+.theme-card.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+    background: var(--surface-active);
+}
+
+.theme-preview {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-preview {
+    background: linear-gradient(135deg, #0a1628, #3b82f6);
+}
+
+.tokyo-preview {
+    background: linear-gradient(135deg, #1a1b26, #7aa2f7);
+}
+
+.aimp-preview {
+    background: linear-gradient(135deg, #121417, #ff8c00);
+}
+
+.retro-preview {
+    background: linear-gradient(135deg, #182d2a, #ff6b6b, #ffd166);
+}
+
+.theme-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.drawer-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: auto;
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
 }
 
 /* =========================================
@@ -262,6 +664,7 @@ body {
 .input-group {
     display: flex;
     gap: var(--space-sm);
+    align-items: center;
 }
 
 .url-input {
@@ -304,6 +707,7 @@ body {
     letter-spacing: 0.5px;
     cursor: pointer;
     transition: all var(--transition-normal);
+    white-space: nowrap;
 }
 
 .btn-primary:hover {
@@ -316,8 +720,8 @@ body {
 }
 
 .btn-primary svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .btn-large {
@@ -361,16 +765,17 @@ body {
 
 .btn-mega {
     width: 100%;
-    padding: var(--space-xl);
-    font-size: 18px;
+    padding: var(--space-lg) var(--space-xl);
+    font-size: 17px;
     font-weight: 800;
     letter-spacing: 1px;
     border-radius: var(--radius-lg);
+    margin-top: var(--space-sm);
 }
 
 .btn-mega svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
 }
 
 .btn-spotify {
@@ -390,6 +795,7 @@ body {
     letter-spacing: 0.5px;
     cursor: pointer;
     transition: all var(--transition-normal);
+    white-space: nowrap;
 }
 
 .btn-spotify:hover {
@@ -398,8 +804,8 @@ body {
 }
 
 .btn-spotify svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .btn-secondary {
@@ -519,8 +925,8 @@ body {
 }
 
 .preview-thumb {
-    width: 100px;
-    height: 56px;
+    width: 120px;
+    height: 68px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
@@ -547,8 +953,17 @@ body {
     color: var(--text-secondary);
 }
 
+/* Download Settings Row (Alineación Horizontal de Carpeta y Formatos) */
+.download-settings-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+}
+
 /* Folder Selector */
 .folder-selector {
+    flex: 1;
     display: flex;
     align-items: center;
     gap: var(--space-sm);
@@ -561,8 +976,8 @@ body {
     font-family: inherit;
     cursor: pointer;
     transition: all var(--transition-fast);
-    width: 100%;
     text-align: left;
+    min-width: 0;
 }
 
 .folder-selector:hover {
@@ -585,72 +1000,45 @@ body {
     white-space: nowrap;
 }
 
-/* =========================================
-   Format Selector
-   ========================================= */
-.format-selector {
+/* Format Picker Group */
+.format-picker {
     display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-}
-
-.format-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.format-buttons {
-    display: flex;
-    gap: var(--space-sm);
-    flex: 1;
+    gap: var(--space-xs);
+    flex-shrink: 0;
 }
 
 .format-btn {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
-    background: transparent;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     transition: all var(--transition-fast);
-}
-
-.format-btn svg {
-    width: 18px;
-    height: 18px;
+    white-space: nowrap;
 }
 
 .format-btn:hover {
-    border-color: var(--primary);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
 .format-btn.active {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     border-color: var(--primary);
     color: white;
-}
-
-.format-btn.active[data-format="mp4"] {
-    background: var(--success);
-    border-color: var(--success);
+    box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* =========================================
-   Search Panel
+   Search Panel (Buscador Avanzado)
    ========================================= */
 .search-content {
     display: flex;
@@ -658,11 +1046,40 @@ body {
     gap: var(--space-md);
 }
 
+.search-filters {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    padding: var(--space-xs) var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
 .search-results {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
-    max-height: 400px;
+    max-height: 520px;
     overflow-y: auto;
 }
 
@@ -670,7 +1087,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    padding: var(--space-sm);
+    padding: var(--space-md);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -681,14 +1098,16 @@ body {
 .search-item:hover {
     background: var(--surface-hover);
     border-color: var(--primary);
+    transform: translateY(-1px);
 }
 
 .search-thumb {
-    width: 80px;
-    height: 45px;
+    width: 96px;
+    height: 54px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
+    background: var(--bg-secondary);
 }
 
 .search-info {
@@ -697,16 +1116,17 @@ body {
 }
 
 .search-title {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-bottom: 2px;
 }
 
 .search-channel {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
@@ -754,8 +1174,8 @@ body {
 }
 
 .playlist-cover {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
@@ -781,7 +1201,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
-    max-height: 250px;
+    max-height: 350px;
     overflow-y: auto;
 }
 
@@ -813,31 +1233,6 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
-}
-
-.btn-icon-small {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.btn-icon-small:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-}
-
-.btn-icon-small svg {
-    width: 14px;
-    height: 14px;
 }
 
 .track-artist {
@@ -874,7 +1269,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
-    max-height: 450px;
+    max-height: 520px;
     overflow-y: auto;
 }
 
@@ -889,8 +1284,8 @@ body {
 }
 
 .download-thumb {
-    width: 64px;
-    height: 36px;
+    width: 80px;
+    height: 45px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
@@ -913,7 +1308,7 @@ body {
 }
 
 .download-progress {
-    height: 4px;
+    height: 6px;
     background: var(--border);
     border-radius: var(--radius-full);
     overflow: hidden;
@@ -1025,182 +1420,11 @@ body {
 /* =========================================
    Responsive Design
    ========================================= */
-
-/* Small screens (max-width: 480px) */
-@media (max-width: 480px) {
-    .app {
-        max-width: 100%;
-    }
-
-    .titlebar {
-        padding: var(--space-xs) var(--space-sm);
-    }
-
-    .titlebar-logo {
-        font-size: 12px;
-    }
-
-    .logo-icon {
-        width: 16px;
-        height: 16px;
-    }
-
-    .tabs {
-        padding: 0 var(--space-sm);
-    }
-
-    .tab {
-        padding: var(--space-sm) var(--space-xs);
-        font-size: 10px;
-    }
-
-    .tab svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .panel {
-        padding: var(--space-md);
-    }
-
-    .home-instruction {
-        font-size: 14px;
-    }
-
-    .url-input {
-        padding: var(--space-sm) var(--space-md);
-        font-size: 13px;
-    }
-
-    .btn-large {
-        padding: var(--space-md);
-        font-size: 14px;
-    }
-
-    .btn-mega {
-        padding: var(--space-lg);
-        font-size: 16px;
-    }
-
-    .btn-mega svg {
-        width: 24px;
-        height: 24px;
-    }
-
-    .video-preview {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .preview-thumb {
-        width: 100%;
-        height: auto;
-        max-height: 150px;
-    }
-
-    .folder-selector {
-        padding: var(--space-sm);
-        font-size: 12px;
-    }
-
-    .downloads-header h2 {
-        font-size: 16px;
-    }
-
-    .download-item {
-        padding: var(--space-sm);
-    }
-
-    .download-thumb {
-        width: 48px;
-        height: 27px;
-    }
-
-    .download-title {
-        font-size: 12px;
-    }
-
-    .search-item {
-        padding: var(--space-xs);
-    }
-
-    .search-thumb {
-        width: 60px;
-        height: 34px;
-    }
-
-    .playlist-header {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .playlist-cover {
-        width: 80px;
-        height: 80px;
-    }
-}
-
-/* Medium screens (481px - 600px) */
-@media (min-width: 481px) and (max-width: 600px) {
-    .app {
-        max-width: 100%;
-    }
-
-    .panel {
-        padding: var(--space-md) var(--space-lg);
-    }
-
-    .btn-mega {
-        padding: var(--space-lg) var(--space-xl);
-    }
-}
-
-/* Large screens (min-width: 601px) */
 @media (min-width: 601px) {
     .app {
-        max-width: 520px;
+        max-width: 780px;
         margin: 0 auto;
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
-    }
-}
-
-/* Height adjustments for short screens */
-@media (max-height: 600px) {
-    .panel {
-        padding: var(--space-sm);
-    }
-
-    .home-content {
-        gap: var(--space-sm);
-    }
-
-    .btn-large {
-        padding: var(--space-sm) var(--space-md);
-    }
-
-    .btn-mega {
-        padding: var(--space-md) var(--space-lg);
-    }
-
-    .video-preview {
-        padding: var(--space-sm);
-    }
-
-    .preview-thumb {
-        width: 80px;
-        height: 45px;
-    }
-
-    .downloads-list {
-        max-height: 250px;
-    }
-
-    .search-results {
-        max-height: 250px;
-    }
-
-    .track-list {
-        max-height: 150px;
     }
 }

@@ -25,7 +25,7 @@ class QueueService {
      * Obtiene los items pendientes
      */
     getPending() {
-        return this.queue.filter(item => item.status === 'pending');
+        return this.queue.filter((item) => item.status === 'pending');
     }
 
     /**
@@ -62,18 +62,18 @@ class QueueService {
 
     /**
      * Elimina un item por ID
-     * @param {number} id 
+     * @param {number} id
      */
     remove(id) {
         // Solo eliminamos si no se está descargando activamente (o dejamos la lógica de cancelación para después)
         // Por ahora mantenemos la lógica original: filtrar los que NO son el ID dado
-        // PERO si se está descargando, la logica original lo permitía? 
+        // PERO si se está descargando, la logica original lo permitía?
         // Original: downloadQueue.filter(item => item.id !== id || item.status === 'downloading');
-        // Esto significa: "Mantenlo si NO es el ID, O SI es el ID pero se está descargando" 
+        // Esto significa: "Mantenlo si NO es el ID, O SI es el ID pero se está descargando"
         // -> Es decir, NO borraba items activos.
 
         // Permitimos eliminar cualquier item, incluso si se está descargando (Soft Cancel)
-        this.queue = this.queue.filter(item => item.id !== id);
+        this.queue = this.queue.filter((item) => item.id !== id);
         this.infoPromises.delete(id);
     }
 
@@ -81,7 +81,9 @@ class QueueService {
      * Limpia items completados o erróneos
      */
     clearCompleted() {
-        this.queue = this.queue.filter(item => item.status === 'downloading' || item.status === 'converting');
+        this.queue = this.queue.filter(
+            (item) => item.status === 'downloading' || item.status === 'converting'
+        );
     }
 
     /**
@@ -97,11 +99,11 @@ class QueueService {
 
     /**
      * Actualiza propiedades de un item
-     * @param {number} id 
-     * @param {Object} updates 
+     * @param {number} id
+     * @param {Object} updates
      */
     updateItem(id, updates) {
-        const item = this.queue.find(i => i.id === id);
+        const item = this.queue.find((i) => i.id === id);
         if (item) {
             Object.assign(item, updates);
             return item;

@@ -6,6 +6,7 @@ const fs = require('fs');
 const logger = require('../utils/logger');
 const { getMainWindow } = require('../window');
 const { loadConfig, saveConfig } = require('../utils/config');
+const { parseCleanMetadata, sanitizeFileName } = require('../utils/validators');
 
 // Services
 const QueueService = require('../services/QueueService');
@@ -16,10 +17,9 @@ let config = loadConfig();
 let downloadFolder = config.downloadFolder || app.getPath('downloads');
 
 /**
- * Controller: YouTubeController (implementado en el archivo IPC por compatibilidad)
+ * Controller: YouTubeController
  * Orquestador entre QueueService, DownloadService y la UI.
  */
-
 function registerYouTubeHandlers() {
     ipcMain.handle('youtube:add-to-queue', handleAddToQueue);
     ipcMain.handle('youtube:get-queue', handleGetQueue);
@@ -34,7 +34,6 @@ function registerYouTubeHandlers() {
     ipcMain.handle('settings:save', handleSaveSettings);
     ipcMain.handle('settings:get', () => config);
 
-    // Inicializar servicio de descargas (verifica binarios)
     DownloadService.initialize();
 
     logger.info('Handlers de YouTube registrados (Architecture: Controller-Service)');
@@ -70,25 +69,36 @@ async function handleSaveSettings(event, newSettings) {
     return { success: false };
 }
 
-async function handleAddToQueue(event, { url, format = 'mp3', quality = null }) {
-    // La validación simple se puede hacer aquí o en el servicio. 
-    // Por simplicidad, delegamos la creación al servicio pero validamos URL aquí.
-    if (!url || !url.includes('youtube') && !url.includes('youtu.be')) {
+async function handleAddToQueue(event, { url, format = 'mp3', quality = null, options = {} }) {
+    if (!url || (!url.includes('youtube') && !url.includes('youtu.be'))) {
         return { success: false, message: 'URL de YouTube inválida' };
     }
 
-    const item = QueueService.add({ url, format, quality });
-    sendQueueUpdate(); // Notificar UI
+    const item = QueueService.add({
+        url,
+        format,
+        quality,
+        embedMetadata: options?.embedMetadata !== false
+    });
+    sendQueueUpdate();
 
     logger.info(`Añadido a cola: ID ${item.id}`);
 
     // Obtener metadata en segundo plano
-    const infoPromise = DownloadService.getVideoInfo(url).then(info => {
+    const infoPromise = DownloadService.getVideoInfo(url).then((info) => {
         if (info) {
+            const cleanMeta = parseCleanMetadata(info.title, info.uploader);
             QueueService.updateItem(item.id, {
-                title: info.title,
+                title: cleanMeta.title,
                 thumbnail: info.thumbnail,
-                duration: info.duration
+                duration: info.duration,
+                metadata: {
+                    title: cleanMeta.title,
+                    artist: cleanMeta.artist,
+                    album: 'Media Converter Pro',
+                    comment: info.url || '',
+                    thumbnailUrl: info.thumbnail || null
+                }
             });
             sendQueueUpdate();
         }
@@ -111,6 +121,7 @@ async function handleClearQueue() {
 }
 
 async function handleRemoveFromQueue(event, { id }) {
+    DownloadService.cancelDownload(id);
     QueueService.remove(id);
     sendQueueUpdate();
     return { success: true };
@@ -121,9 +132,7 @@ async function handleStartQueue() {
         return { success: false, message: 'Ya hay una descarga en proceso' };
     }
 
-    // Iniciar loop de procesamiento (sin await para no bloquear IPC)
     processQueueLoop();
-
     return { success: true };
 }
 
@@ -134,10 +143,6 @@ async function handleGetVideoInfo(event, { url }) {
 }
 
 async function checkReady() {
-    // Verificamos si los binarios existen
-    // Para simplificar, asumimos true si initializó, o podemos preguntar al servicio
-    // Como DownloadService inicializa async, verificamos existencia de yt-dlp
-    const fs = require('fs');
     const ready = fs.existsSync(DownloadService.ytDlpPath);
     return { ready, downloadFolder };
 }
@@ -147,13 +152,13 @@ async function handleClearCache() {
     return { success: true, message: 'Cache limpiado' };
 }
 
-async function handleSearch(event, { query, limit = 10 }) {
-    const results = await DownloadService.search(query, limit);
+async function handleSearch(event, { query, limit = 15, type = 'all' }) {
+    const results = await DownloadService.search(query, limit, type);
     return { success: true, results };
 }
 
 // ==========================================
-// Lógica de Orquestación (The Loop)
+// Lógica de Orquestación
 // ==========================================
 
 async function processQueueLoop() {
@@ -167,8 +172,6 @@ async function processQueueLoop() {
 
     QueueService.setProcessing(true);
 
-    // Procesamos items uno por uno
-    // Nota: Obtenemos la lista actualizada en cada iteración por si se añaden/borran cosas
     while (true) {
         const nextItem = QueueService.getPending()[0];
         if (!nextItem) break;
@@ -178,42 +181,41 @@ async function processQueueLoop() {
 
     QueueService.setProcessing(false);
 
-    // Notificar UI fin
     const mainWindow = getMainWindow();
     if (mainWindow) mainWindow.webContents.send('youtube:queue-complete');
 }
 
 async function processSingleItem(item) {
     try {
-        // FASE 0: RESOLUCIÓN DE URL (Si es necesario)
         if (!item.url && (item.searchQuery || (item.artist && item.name))) {
             QueueService.updateItem(item.id, { status: 'searching' });
             sendQueueUpdate();
 
             const query = item.searchQuery || `${item.artist} - ${item.name} audio`;
-            logger.info(`[DEBUG] Resolviendo URL para item ${item.id}. Query: "${query}"`);
+            logger.info(`Resolviendo URL para item ${item.id}. Query: "${query}"`);
 
             try {
-                // Usamos search (lista) y tomamos el primero, O una función específica de single URL
-                // DownloadService.search devuelve lista de objetos {url, title...}. Necesitamos la URL.
                 const results = await DownloadService.search(query, 1);
-                logger.info(`[DEBUG] Resultados búsqueda: ${results ? results.length : 'null'}`);
 
                 if (results && results.length > 0) {
                     item.url = results[0].url;
+                    const cleanMeta = parseCleanMetadata(results[0].title, results[0].uploader);
                     QueueService.updateItem(item.id, {
                         url: results[0].url,
-                        title: results[0].title, // Aprovechamos para setear titulo real
+                        title: cleanMeta.title,
                         thumbnail: results[0].thumbnail,
-                        duration: results[0].duration
+                        duration: results[0].duration,
+                        metadata: {
+                            title: cleanMeta.title,
+                            artist: item.artist || cleanMeta.artist,
+                            album: 'Media Converter Pro'
+                        }
                     });
-                    // Continuar abajo con la URL resuelta
                 } else {
-                    logger.warn(`[DEBUG] Búsqueda vacía para: ${query}`);
                     throw new Error(`No se encontró video en YouTube para: ${query}`);
                 }
             } catch (e) {
-                logger.error(`[DEBUG] Excepción interna en búsqueda:`, e); // Log raw exception
+                logger.error(`Excepción interna en búsqueda:`, e);
                 throw new Error('Falló búsqueda en YouTube: ' + e.message);
             }
         }
@@ -221,21 +223,12 @@ async function processSingleItem(item) {
         QueueService.updateItem(item.id, { status: 'downloading', progress: 0 });
         sendQueueUpdate();
 
-        // Determinar ID del video para nombre temporal
-        // Si falló la búsqueda arriba, ya saltó al catch
-        const videoId = item.url.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1] || `video_${item.id}`;
-        const ext = item.format === 'm4a' ? 'm4a' : item.format; // map format
+        const videoId =
+            item.url.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1] ||
+            `video_${item.id}`;
+        const ext = ['mp3', 'm4a', 'aac', 'mp4'].includes(item.format) ? item.format : 'mp3';
 
-        // Paths
-        // Usar título limpio si existe para el temporal, o videoId
-        const baseName = item.title && item.title !== 'Obteniendo título...'
-            ? require('../utils/validators').sanitizeFileName(item.title)
-            : videoId;
-
-        // Determinar subcarpeta basada en formato/extensión
-        // Usuario pidió carpeta para mp3 y carpeta para mp4
-        // Todo lo que no sea video (mp4) va a "mp3" (incluyendo m4a)
-        const subfolderName = (item.format === 'mp4') ? 'mp4' : 'mp3';
+        const subfolderName = item.format === 'mp4' ? 'mp4' : 'mp3';
         const subfolderPath = path.join(downloadFolder, subfolderName);
 
         if (!fs.existsSync(subfolderPath)) {
@@ -243,20 +236,17 @@ async function processSingleItem(item) {
                 fs.mkdirSync(subfolderPath, { recursive: true });
             } catch (e) {
                 logger.error('Error creando subcarpeta:', e);
-                // Fallback to root if fails
             }
         }
 
-        // Use subfolder path effectively
-        const effectiveFolder = fs.existsSync(subfolderPath) ? subfolderPath : downloadFolder;
+        const tempDir = path.join(app.getPath('userData'), 'temp');
+        fs.mkdirSync(tempDir, { recursive: true });
 
-        // Use videoId for absolute safety in temp file to avoid issues
         const tempFileName = `${videoId}.${ext}`;
-        const tempFilePath = path.join(effectiveFolder, tempFileName);
+        const tempFilePath = path.join(tempDir, tempFileName);
 
         // --- FASE 1: DESCARGA ---
         const onProgress = (pct) => {
-            // Normalizar progreso: Descarga es 0-75% del total si hay conversión, sino 0-100%
             const maxDownloadPct = item.format === 'mp4' ? 99 : 75;
             const normalized = Math.min(Math.round(pct * (maxDownloadPct / 100)), maxDownloadPct);
             QueueService.updateItem(item.id, { progress: normalized });
@@ -264,96 +254,165 @@ async function processSingleItem(item) {
         };
 
         if (item.format === 'mp4') {
-            await DownloadService.downloadVideo(item.url, tempFilePath, item.quality, onProgress);
+            await DownloadService.downloadVideo(
+                item.url,
+                tempFilePath,
+                item.quality,
+                onProgress,
+                item.format,
+                item.id
+            );
         } else {
-            // Audio Flow: Best Audio -> Convert
-            const tempWebmPath = tempFilePath.replace(/\.[^/.]+$/, '.temp.webm');
-
-            // 1. Descargar mejor audio
-            await DownloadService.downloadBestAudio(item.url, tempWebmPath, (pct) => {
-                // Descarga es el primer 75%
-                const finalPct = Math.min(Math.round(pct * 0.75), 75);
-                QueueService.updateItem(item.id, { progress: finalPct });
-                sendQueueUpdate();
-            });
+            const tempWebmPath = path.join(tempDir, `${videoId}.webm`);
+            await DownloadService.downloadBestAudio(
+                item.url,
+                tempWebmPath,
+                (pct) => {
+                    const finalPct = Math.min(Math.round(pct * 0.75), 75);
+                    QueueService.updateItem(item.id, { progress: finalPct });
+                    sendQueueUpdate();
+                },
+                item.id
+            );
 
             // 2. Convertir
             QueueService.updateItem(item.id, { status: 'converting' });
             sendQueueUpdate();
 
             const conversionProgress = (pct) => {
-                // Conversión es el último 25% (75 -> 100)
                 const finalPct = Math.min(75 + Math.round(pct * 0.25), 99);
                 QueueService.updateItem(item.id, { progress: finalPct });
                 sendQueueUpdate();
             };
 
-            if (item.format === 'm4a') {
+            if (item.format === 'm4a' || item.format === 'aac') {
                 await DownloadService.convertToAAC(tempWebmPath, tempFilePath, conversionProgress);
             } else {
                 await DownloadService.convertToMp3(tempWebmPath, tempFilePath, conversionProgress);
             }
 
-            // Limpiar temporal
-            try { fs.unlinkSync(tempWebmPath); } catch (e) { }
+            try {
+                fs.unlinkSync(tempWebmPath);
+            } catch (e) {}
         }
 
-        // --- FASE 2: RENOMBRADO FINAL ---
-        // Esperamos metadata si no está. Aumentamos tiempo de espera.
+        // --- FASE 2: RENOMBRADO Y METADATOS LIMPIOS ---
         let finalPath = tempFilePath;
         if (item.title === 'Obteniendo título...') {
             const p = QueueService.getInfoPromise(item.id);
             if (p) {
-                // Wait up to 15 seconds for metadata (network can be slow)
-                await Promise.race([p, new Promise(r => setTimeout(r, 15000))]);
+                await Promise.race([p, new Promise((r) => setTimeout(r, 15000))]);
             }
 
-            // If still missing, try one last check directly
-            const currentItem = QueueService.getAll().find(i => i.id === item.id);
+            const currentItem = QueueService.getAll().find((i) => i.id === item.id);
             if (!currentItem || currentItem.title === 'Obteniendo título...') {
                 try {
                     const info = await DownloadService.getVideoInfo(item.url);
                     if (info) {
+                        const cleanMeta = parseCleanMetadata(info.title, info.uploader);
                         QueueService.updateItem(item.id, {
-                            title: info.title,
+                            title: cleanMeta.title,
                             thumbnail: info.thumbnail,
-                            duration: info.duration
+                            duration: info.duration,
+                            metadata: {
+                                title: cleanMeta.title,
+                                artist: cleanMeta.artist,
+                                album: 'Media Converter Pro'
+                            }
                         });
-                        // Update local var checking queue again
                     }
-                } catch (e) { logger.warn('Fallo intento final de obtener titulo', e); }
+                } catch (e) {
+                    logger.warn('Fallo intento final de obtener titulo', e);
+                }
             }
 
             QueueService.removeInfoPromise(item.id);
         }
 
-        // Actualizar item con datos frescos del servicio por si la promesa resolvió
-        const freshItem = QueueService.getAll().find(i => i.id === item.id);
-        if (freshItem && freshItem.title && freshItem.title !== 'Obteniendo título...') {
-            const { sanitizeFileName } = require('../utils/validators');
-            const newName = sanitizeFileName(freshItem.title) + '.' + ext;
-            // Usamos el mismo directorio donde está el temporal (ya sea la subcarpeta o root)
-            const targetDir = path.dirname(tempFilePath);
-            const newPath = path.join(targetDir, newName);
+        const freshItem = QueueService.getAll().find((i) => i.id === item.id);
+        const rawTitle =
+            freshItem && freshItem.title && freshItem.title !== 'Obteniendo título...'
+                ? freshItem.title
+                : item.title && item.title !== 'Obteniendo título...'
+                  ? item.title
+                  : videoId;
 
-            try {
-                if (fs.existsSync(tempFilePath) && tempFilePath !== newPath) {
-                    fs.renameSync(tempFilePath, newPath);
-                    finalPath = newPath;
-                    logger.info(`Renombrado: ${newName}`);
+        const cleanMeta = parseCleanMetadata(rawTitle, freshItem?.uploader || item.artist);
+        const desiredBaseName = sanitizeFileName(cleanMeta.title);
+        const targetDir = path.join(downloadFolder, subfolderName);
+        const targetPath = path.join(targetDir, `${desiredBaseName}.${ext}`);
+
+        try {
+            fs.mkdirSync(targetDir, { recursive: true });
+
+            if (fs.existsSync(tempFilePath) && tempFilePath !== targetPath) {
+                try {
+                    if (fs.existsSync(targetPath)) {
+                        fs.unlinkSync(targetPath);
+                    }
+                    fs.renameSync(tempFilePath, targetPath);
+                    finalPath = targetPath;
+                    logger.info(`Renombrado a metadatos limpios: ${desiredBaseName}.${ext}`);
+                } catch (e) {
+                    logger.warn('No se pudo mover el archivo temporal al destino:', e.message);
+                    finalPath = tempFilePath;
                 }
-            } catch (e) { logger.warn('Error renombrando', e.message); }
+            } else if (fs.existsSync(tempFilePath)) {
+                finalPath = tempFilePath;
+            }
+
+            // Inyección limpia de metadatos ID3v2 + Portada
+            if (
+                item.embedMetadata &&
+                fs.existsSync(finalPath) &&
+                ['.mp3', '.m4a', '.aac'].includes(path.extname(finalPath).toLowerCase())
+            ) {
+                const metadata = {
+                    title: cleanMeta.title,
+                    artist: freshItem?.metadata?.artist || item.artist || cleanMeta.artist,
+                    album: freshItem?.metadata?.album || 'Media Converter Pro',
+                    comment: freshItem?.metadata?.comment || item.url || '',
+                    thumbnailUrl: freshItem?.metadata?.thumbnailUrl || freshItem?.thumbnail || null
+                };
+                const coverPath = path.join(tempDir, `cover_${item.id}.jpg`);
+                if (metadata.thumbnailUrl) {
+                    try {
+                        await DownloadService.downloadThumbnail(metadata.thumbnailUrl, coverPath);
+                    } catch (e) {
+                        logger.warn('Error descargando portada:', e.message);
+                    }
+                }
+                try {
+                    await DownloadService.applyMediaMetadata(
+                        finalPath,
+                        `${finalPath}.tmp`,
+                        metadata,
+                        fs.existsSync(coverPath) ? coverPath : null
+                    );
+                    if (fs.existsSync(`${finalPath}.tmp`)) {
+                        fs.renameSync(`${finalPath}.tmp`, finalPath);
+                    }
+                    // Eliminar la portada borrador temporal para mantener el disco limpio
+                    if (fs.existsSync(coverPath)) {
+                        try {
+                            fs.unlinkSync(coverPath);
+                        } catch (e) {}
+                    }
+                } catch (e) {
+                    logger.warn('Error aplicando metadatos:', e.message);
+                }
+            }
+        } catch (e) {
+            logger.warn('Error renombrando', e.message);
         }
 
-        // Éxito
         QueueService.updateItem(item.id, {
             status: 'completed',
             progress: 100,
             filePath: finalPath,
-            title: (freshItem && freshItem.title !== 'Obteniendo título...') ? freshItem.title : videoId
+            title: cleanMeta.title
         });
-        logger.info(`Completo: ${item.id}`);
-
+        logger.info(`Completo con metadatos limpios: ${item.id}`);
     } catch (error) {
         logger.error(`Error procesando item ${item.id}:`, error.stack || error);
         QueueService.updateItem(item.id, {

@@ -10,9 +10,9 @@ const { getMainWindow } = require('../window');
  * Extensiones permitidas para selección de archivos
  */
 const ALLOWED_EXTENSIONS = {
-    video: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm'],
+    video: ['mp4', 'mov', 'mkv', 'flv', 'wmv', 'webm'],
     audio: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'],
-    all: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac']
+    all: ['mp4', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac']
 };
 
 /**
@@ -30,7 +30,7 @@ function registerFileHandlers() {
 
 /**
  * Maneja la selección de un archivo
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.type Tipo de archivo (video, audio, all)
  * @returns {Promise<{success: boolean, path?: string, name?: string}>}
@@ -42,9 +42,7 @@ async function handleSelectFile(event, { type = 'all' } = {}) {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
         title: 'Seleccionar archivo',
         properties: ['openFile'],
-        filters: [
-            { name: 'Archivos multimedia', extensions }
-        ]
+        filters: [{ name: 'Archivos multimedia', extensions }]
     });
 
     if (canceled || filePaths.length === 0) {
@@ -65,7 +63,7 @@ async function handleSelectFile(event, { type = 'all' } = {}) {
 
 /**
  * Maneja la selección de múltiples archivos
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.type Tipo de archivo
  * @returns {Promise<{success: boolean, files?: Array}>}
@@ -77,16 +75,14 @@ async function handleSelectMultipleFiles(event, { type = 'all' } = {}) {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
         title: 'Seleccionar archivos',
         properties: ['openFile', 'multiSelections'],
-        filters: [
-            { name: 'Archivos multimedia', extensions }
-        ]
+        filters: [{ name: 'Archivos multimedia', extensions }]
     });
 
     if (canceled || filePaths.length === 0) {
         return { success: false };
     }
 
-    const files = filePaths.map(fp => ({
+    const files = filePaths.map((fp) => ({
         path: fp,
         name: path.basename(fp)
     }));
@@ -101,7 +97,7 @@ async function handleSelectMultipleFiles(event, { type = 'all' } = {}) {
 
 /**
  * Obtiene información básica de un archivo
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.filePath Ruta del archivo
  * @returns {Promise<{success: boolean, info?: Object}>}
@@ -151,7 +147,7 @@ async function handleClose() {
 
 /**
  * Abre una carpeta en el explorador de archivos
- * @param {Electron.IpcMainInvokeEvent} event 
+ * @param {Electron.IpcMainInvokeEvent} event
  * @param {Object} params
  * @param {string} params.folderPath Ruta de la carpeta
  */
@@ -175,7 +171,7 @@ async function handleOpenFolder(event, { folderPath }) {
 
 /**
  * Formatea el tamaño de archivo en formato legible
- * @param {number} bytes 
+ * @param {number} bytes
  * @returns {string}
  */
 function formatFileSize(bytes) {

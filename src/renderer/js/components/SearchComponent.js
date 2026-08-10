@@ -48,9 +48,15 @@ export class SearchComponent {
         });
 
         // Toolbar buttons (Format)
-        document.getElementById('search-btn-mp3')?.addEventListener('click', () => this.setFormat('mp3'));
-        document.getElementById('search-btn-m4a')?.addEventListener('click', () => this.setFormat('m4a'));
-        document.getElementById('search-btn-video')?.addEventListener('click', () => this.setFormat('mp4'));
+        document
+            .getElementById('search-btn-mp3')
+            ?.addEventListener('click', () => this.setFormat('mp3'));
+        document
+            .getElementById('search-btn-m4a')
+            ?.addEventListener('click', () => this.setFormat('m4a'));
+        document
+            .getElementById('search-btn-video')
+            ?.addEventListener('click', () => this.setFormat('mp4'));
     }
 
     async handleSearch() {
@@ -94,7 +100,9 @@ export class SearchComponent {
 
         this.emptyState?.classList.add('hidden');
 
-        this.resultsList.innerHTML = results.map(item => `
+        this.resultsList.innerHTML = results
+            .map(
+                (item) => `
             <div class="result-item" data-url="${escapeHtml(item.url)}" data-title="${escapeHtml(item.title)}">
                 <img class="result-thumb" src="${item.thumbnail}" alt="">
                 <div class="result-info">
@@ -120,7 +128,9 @@ export class SearchComponent {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     }
 
     showEmpty() {

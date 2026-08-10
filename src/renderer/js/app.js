@@ -8,7 +8,7 @@
 // =========================================
 // DOM References (initialized after DOM ready)
 // =========================================
-const $ = id => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 let DOM = {};
 
 // =========================================
@@ -20,8 +20,14 @@ const State = {
     downloads: [],
     currentVideoInfo: null,
     selectedQuality: 1080,
-    selectedFormat: 'mp3'
+    selectedFormat: 'mp3',
+    isFetchingInfo: false,
+    activeUrl: null,
+    searchFilter: 'all',
+    currentTheme: 'dark'
 };
+
+let urlDebounceTimeout = null;
 
 // =========================================
 // Initialize
@@ -29,9 +35,13 @@ const State = {
 function init() {
     console.log('[App] Initializing...');
 
-    // Initialize DOM references AFTER DOM is ready
     DOM = {
-        // Titlebar
+        // Titlebar & Drawer
+        btnHamburger: $('btn-hamburger'),
+        btnSettingsGear: $('btn-settings-gear'),
+        settingsDrawer: $('settings-drawer'),
+        drawerOverlay: $('drawer-overlay'),
+        btnCloseDrawer: $('btn-close-drawer'),
         btnMinimize: $('btn-minimize'),
         btnClose: $('btn-close'),
 
@@ -60,14 +70,15 @@ function init() {
         btnFormatMp3: $('btn-format-mp3'),
         btnFormatMp4: $('btn-format-mp4'),
         btnDownload: $('btn-download'),
-        downloadText: $('download-text'),
-        folderSelector: $('folder-selector'),
+        downloadBtnText: $('download-btn-text'),
+        btnFolder: $('btn-folder'),
         folderPath: $('folder-path'),
 
         // Search
         searchInput: $('search-input'),
         btnSearch: $('btn-search'),
         searchResults: $('search-results'),
+        searchFilters: $('search-filters'),
 
         // Spotify
         spotifyInput: $('spotify-input'),
@@ -79,11 +90,11 @@ function init() {
         playlistCount: $('playlist-count'),
         trackList: $('track-list'),
         btnDownloadPlaylist: $('btn-download-playlist'),
-        downloadPlaylistText: $('download-playlist-text'),
 
         // Downloads
         btnOpenFolder: $('btn-open-folder'),
         btnClear: $('btn-clear'),
+        btnCache: $('btn-cache'),
         downloadsList: $('downloads-list'),
         emptyDownloads: $('empty-downloads'),
 
@@ -92,23 +103,18 @@ function init() {
         toastMessage: $('toast-message')
     };
 
-    console.log('[App] DOM refs:', Object.keys(DOM).filter(k => DOM[k]).length, 'found');
-
-    // Setup toast
     window.showToast = showToast;
 
-    // Load settings and queue
     loadInitialData();
-
-    // Setup event listeners
     setupEventListeners();
     setupQueueListeners();
-
-    console.log('[App] Initialized successfully');
 }
 
 async function loadInitialData() {
     try {
+        const savedTheme = localStorage.getItem('mcp_theme') || 'dark';
+        applyTheme(savedTheme);
+
         const settings = await window.electronAPI.getSettings();
         if (settings?.downloadFolder) {
             State.downloadFolder = settings.downloadFolder;
@@ -131,24 +137,67 @@ async function loadInitialData() {
 }
 
 // =========================================
+// Drawer & Theme Control
+// =========================================
+function toggleDrawer(open) {
+    if (!DOM.settingsDrawer || !DOM.drawerOverlay) return;
+    const shouldOpen = open !== undefined ? open : DOM.settingsDrawer.classList.contains('hidden');
+
+    if (shouldOpen) {
+        DOM.settingsDrawer.classList.remove('hidden');
+        DOM.drawerOverlay.classList.remove('hidden');
+    } else {
+        DOM.settingsDrawer.classList.add('hidden');
+        DOM.drawerOverlay.classList.add('hidden');
+    }
+}
+
+function applyTheme(themeName) {
+    State.currentTheme = themeName;
+    document.documentElement.setAttribute('data-theme', themeName);
+    localStorage.setItem('mcp_theme', themeName);
+
+    // Actualizar cards activas
+    document.querySelectorAll('.theme-card').forEach((card) => {
+        card.classList.toggle('active', card.dataset.theme === themeName);
+    });
+}
+
+// =========================================
 // Event Listeners
 // =========================================
 function setupEventListeners() {
-    console.log('[App] Setting up event listeners...');
+    // Control del Drawer (Menú Hamburguesa & Tuerquita)
+    if (DOM.btnHamburger) {
+        DOM.btnHamburger.addEventListener('click', () => toggleDrawer(true));
+    }
+    if (DOM.btnSettingsGear) {
+        DOM.btnSettingsGear.addEventListener('click', () => toggleDrawer(true));
+    }
+    if (DOM.btnCloseDrawer) {
+        DOM.btnCloseDrawer.addEventListener('click', () => toggleDrawer(false));
+    }
+    if (DOM.drawerOverlay) {
+        DOM.drawerOverlay.addEventListener('click', () => toggleDrawer(false));
+    }
+
+    // Selector de Temas
+    document.querySelectorAll('.theme-card').forEach((card) => {
+        card.addEventListener('click', () => {
+            const theme = card.dataset.theme;
+            if (theme) {
+                applyTheme(theme);
+                showToast(`Tema cambiado a: ${card.textContent.trim()}`, 'success');
+            }
+        });
+    });
 
     // Window controls
     if (DOM.btnMinimize) {
-        DOM.btnMinimize.addEventListener('click', () => {
-            console.log('[Click] Minimize');
-            window.electronAPI.minimizeWindow();
-        });
+        DOM.btnMinimize.addEventListener('click', () => window.electronAPI.minimizeWindow());
     }
-
     if (DOM.btnClose) {
-        DOM.btnClose.addEventListener('click', () => {
-            console.log('[Click] Close');
-            window.electronAPI.closeWindow();
-        });
+        DOM.btnClose.addEventListener('click', () => window.electronAPI.closeWindow());
     }
 
     // Tab navigation
@@ -159,51 +208,51 @@ function setupEventListeners() {
 
     // Home - Paste button
     if (DOM.btnPaste) {
-        DOM.btnPaste.addEventListener('click', () => {
-            console.log('[Click] Paste');
-            handlePaste();
-        });
+        DOM.btnPaste.addEventListener('click', () => handlePaste());
     }
 
-    // Home - URL input enter key
+    // Home - URL input events
     if (DOM.urlInput) {
         DOM.urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                if (urlDebounceTimeout) clearTimeout(urlDebounceTimeout);
                 const url = DOM.urlInput.value.trim();
-                if (url) fetchVideoInfo(url);
+                if (url && isValidYouTubeUrl(url)) {
+                    fetchVideoInfo(url);
+                }
+            }
+        });
+
+        DOM.urlInput.addEventListener('input', () => {
+            if (urlDebounceTimeout) clearTimeout(urlDebounceTimeout);
+            const url = DOM.urlInput.value.trim();
+            if (url && isValidYouTubeUrl(url)) {
+                urlDebounceTimeout = setTimeout(() => {
+                    fetchVideoInfo(url);
+                }, 500);
             }
         });
     }
 
     // Home - Download button
     if (DOM.btnDownload) {
-        DOM.btnDownload.addEventListener('click', () => {
-            console.log('[Click] Download');
-            handleDownload();
-        });
+        DOM.btnDownload.addEventListener('click', () => handleDownload());
     }
 
-    // Home - Format selector buttons
+    // Home - Format selector
     if (DOM.btnFormatMp3) {
-        DOM.btnFormatMp3.addEventListener('click', () => {
-            setFormat('mp3');
-        });
+        DOM.btnFormatMp3.addEventListener('click', () => setFormat('mp3'));
     }
     if (DOM.btnFormatMp4) {
-        DOM.btnFormatMp4.addEventListener('click', () => {
-            setFormat('mp4');
-        });
+        DOM.btnFormatMp4.addEventListener('click', () => setFormat('mp4'));
     }
 
     // Home - Folder selector
-    if (DOM.folderSelector) {
-        DOM.folderSelector.addEventListener('click', () => {
-            console.log('[Click] Folder selector');
-            handleSelectFolder();
-        });
+    if (DOM.btnFolder) {
+        DOM.btnFolder.addEventListener('click', () => handleSelectFolder());
     }
 
-    // Search - Search button
+    // Search - Actions & Enter
     if (DOM.btnSearch) {
         DOM.btnSearch.addEventListener('click', () => {
             const query = DOM.searchInput?.value.trim();
@@ -211,7 +260,6 @@ function setupEventListeners() {
         });
     }
 
-    // Search - Enter key
     if (DOM.searchInput) {
         DOM.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -221,7 +269,22 @@ function setupEventListeners() {
         });
     }
 
-    // Spotify - Load playlist
+    if (DOM.searchFilters) {
+        DOM.searchFilters.querySelectorAll('.filter-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                DOM.searchFilters
+                    .querySelectorAll('.filter-chip')
+                    .forEach((c) => c.classList.remove('active'));
+                chip.classList.add('active');
+                State.searchFilter = chip.dataset.type || 'all';
+
+                const query = DOM.searchInput?.value.trim();
+                if (query) handleSearch(query);
+            });
+        });
+    }
+
+    // Spotify
     if (DOM.btnLoadPlaylist) {
         DOM.btnLoadPlaylist.addEventListener('click', () => {
             const url = DOM.spotifyInput?.value.trim();
@@ -229,188 +292,187 @@ function setupEventListeners() {
         });
     }
 
-    // Spotify - Download button
     if (DOM.btnDownloadPlaylist) {
-        DOM.btnDownloadPlaylist.addEventListener('click', () => {
-            handleDownloadSpotifyPlaylist();
-        });
+        DOM.btnDownloadPlaylist.addEventListener('click', () => handleDownloadSpotifyPlaylist());
     }
 
-    // Downloads - Open folder
+    // Downloads
     if (DOM.btnOpenFolder) {
         DOM.btnOpenFolder.addEventListener('click', () => {
             if (State.downloadFolder) {
                 window.electronAPI.openFolder(State.downloadFolder);
-            } else {
-                showToast('No hay carpeta seleccionada', 'error');
             }
         });
     }
 
-    // Downloads - Clear history
     if (DOM.btnClear) {
         DOM.btnClear.addEventListener('click', async () => {
             await window.electronAPI.clearQueue();
-            State.downloads = [];
-            updateDownloadsList();
-            updateBadge();
-            showToast('Historial limpiado');
+            showToast('Cola limpiada', 'info');
         });
     }
 
-    console.log('[App] Event listeners ready');
-}
-
-function setupQueueListeners() {
-    window.electronAPI.onQueueUpdate((data) => {
-        State.downloads = data.queue || [];
-        updateDownloadsList();
-        updateBadge();
-        if (data.downloadFolder) {
-            State.downloadFolder = data.downloadFolder;
-            updateFolderDisplay();
-        }
-    });
-
-    window.electronAPI.onQueueComplete(() => {
-        showToast('¡Descargas completadas!', 'success');
-    });
+    if (DOM.btnCache) {
+        DOM.btnCache.addEventListener('click', async () => {
+            const res = await window.electronAPI.clearCache();
+            if (res.success) showToast('Caché limpiado correctamente', 'success');
+        });
+    }
 }
 
 // =========================================
 // Tab Navigation
 // =========================================
-function switchTab(tab) {
-    console.log('[App] Switching to:', tab);
-    State.currentTab = tab;
+function switchTab(tabName) {
+    State.currentTab = tabName;
 
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const tabNames = { home: 'tabHome', search: 'tabSearch', spotify: 'tabSpotify', downloads: 'tabDownloads' };
-    if (DOM[tabNames[tab]]) DOM[tabNames[tab]].classList.add('active');
+    const tabs = [DOM.tabHome, DOM.tabSearch, DOM.tabSpotify, DOM.tabDownloads];
+    const panels = [DOM.panelHome, DOM.panelSearch, DOM.panelSpotify, DOM.panelDownloads];
 
-    // Update panels
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    const panelNames = { home: 'panelHome', search: 'panelSearch', spotify: 'panelSpotify', downloads: 'panelDownloads' };
-    if (DOM[panelNames[tab]]) DOM[panelNames[tab]].classList.add('active');
+    tabs.forEach((tab) => tab?.classList.remove('active'));
+    panels.forEach((panel) => panel?.classList.remove('active'));
+
+    switch (tabName) {
+        case 'home':
+            DOM.tabHome?.classList.add('active');
+            DOM.panelHome?.classList.add('active');
+            break;
+        case 'search':
+            DOM.tabSearch?.classList.add('active');
+            DOM.panelSearch?.classList.add('active');
+            break;
+        case 'spotify':
+            DOM.tabSpotify?.classList.add('active');
+            DOM.panelSpotify?.classList.add('active');
+            break;
+        case 'downloads':
+            DOM.tabDownloads?.classList.add('active');
+            DOM.panelDownloads?.classList.add('active');
+            break;
+    }
 }
 
 // =========================================
-// Home - Main Flow
+// Queue Listener Setup
+// =========================================
+function setupQueueListeners() {
+    window.electronAPI.onQueueUpdate(({ queue, downloadFolder }) => {
+        State.downloads = queue || [];
+        if (downloadFolder) {
+            State.downloadFolder = downloadFolder;
+            updateFolderDisplay();
+        }
+        updateDownloadsList();
+        updateBadge();
+    });
+
+    window.electronAPI.onQueueComplete(() => {
+        showToast('¡Todas las descargas han finalizado!', 'success');
+    });
+}
+
+// =========================================
+// Home Handlers
 // =========================================
 async function handlePaste() {
     try {
-        const text = await navigator.clipboard.readText();
-        console.log('[App] Pasted:', text.substring(0, 50));
-        if (DOM.urlInput) DOM.urlInput.value = text;
-
-        if (isValidYouTubeUrl(text)) {
-            fetchVideoInfo(text);
-        } else {
-            showToast('Link no válido. Copia un link de YouTube.', 'error');
+        const text = window.electronAPI.readClipboard();
+        if (text && DOM.urlInput) {
+            DOM.urlInput.value = text.trim();
+            if (isValidYouTubeUrl(text.trim())) {
+                fetchVideoInfo(text.trim());
+            } else {
+                showToast('URL de YouTube no válida', 'error');
+            }
         }
     } catch (e) {
-        console.error('Paste error:', e);
-        showToast('No se pudo pegar. Intenta de nuevo.', 'error');
+        showToast('No se pudo acceder al portapapeles', 'error');
     }
 }
 
 async function fetchVideoInfo(url) {
-    console.log('[App] Fetching video info...');
+    if (State.isFetchingInfo && State.activeUrl === url) return;
 
-    // Show loading
+    State.isFetchingInfo = true;
+    State.activeUrl = url;
+
     if (DOM.loadingState) DOM.loadingState.classList.remove('hidden');
     if (DOM.videoPreview) DOM.videoPreview.classList.add('hidden');
+    if (DOM.formatSelector) DOM.formatSelector.classList.add('hidden');
     if (DOM.btnDownload) DOM.btnDownload.classList.add('hidden');
 
     try {
-        const result = await window.electronAPI.getYouTubeInfo(url);
+        const response = await window.electronAPI.getVideoInfo(url);
         if (DOM.loadingState) DOM.loadingState.classList.add('hidden');
 
-        // The API returns { success, info } or { success, message }
-        if (!result || !result.success || !result.info) {
-            showToast(result?.message || 'No se pudo obtener info del video', 'error');
+        if (!response || !response.success || !response.info) {
+            showToast('No se pudo obtener información del video', 'error');
+            State.activeUrl = null;
             return;
         }
 
-        const info = result.info;
-        console.log('[App] Got video info:', info.title);
-
-        // Show preview
+        const info = response.info;
         if (DOM.previewThumb) DOM.previewThumb.src = info.thumbnail || '';
         if (DOM.previewTitle) DOM.previewTitle.textContent = info.title || 'Sin título';
-        if (DOM.previewChannel) DOM.previewChannel.textContent = info.uploader || '';
+        if (DOM.previewChannel)
+            DOM.previewChannel.textContent = info.uploader || 'Canal desconocido';
         if (DOM.videoPreview) DOM.videoPreview.classList.remove('hidden');
 
-        // Store info
         State.currentVideoInfo = info;
-        State.selectedQuality = info.availableQualities?.length > 0
-            ? Math.max(...info.availableQualities)
-            : 1080;
+        State.selectedQuality =
+            info.availableQualities?.length > 0 ? Math.max(...info.availableQualities) : 1080;
 
-        // Show format selector and download button
         if (DOM.formatSelector) DOM.formatSelector.classList.remove('hidden');
         if (DOM.btnDownload) DOM.btnDownload.classList.remove('hidden');
         updateDownloadButtonText();
-
     } catch (e) {
         console.error('Fetch error:', e);
         if (DOM.loadingState) DOM.loadingState.classList.add('hidden');
         showToast('Error al obtener información', 'error');
+        State.activeUrl = null;
+    } finally {
+        State.isFetchingInfo = false;
     }
 }
 
-// Format selection
 function setFormat(format) {
     State.selectedFormat = format;
-
-    // Update button states
-    if (DOM.btnFormatMp3) {
-        DOM.btnFormatMp3.classList.toggle('active', format === 'mp3');
-    }
-    if (DOM.btnFormatMp4) {
-        DOM.btnFormatMp4.classList.toggle('active', format === 'mp4');
-    }
-
+    if (DOM.btnFormatMp3) DOM.btnFormatMp3.classList.toggle('active', format === 'mp3');
+    if (DOM.btnFormatMp4) DOM.btnFormatMp4.classList.toggle('active', format === 'mp4');
     updateDownloadButtonText();
 }
 
 function updateDownloadButtonText() {
-    if (DOM.downloadText) {
-        const formatLabel = State.selectedFormat === 'mp4' ? 'VIDEO' : 'MP3';
-        DOM.downloadText.textContent = `DESCARGAR ${formatLabel}`;
+    if (DOM.downloadBtnText) {
+        DOM.downloadBtnText.textContent =
+            State.selectedFormat === 'mp3' ? 'Descargar MP3' : 'Descargar MP4';
     }
 }
 
 async function handleDownload() {
-    const url = DOM.urlInput?.value.trim();
-    if (!url) {
-        showToast('Primero pega un link', 'error');
-        return;
-    }
-
-    if (!State.downloadFolder) {
-        showToast('Primero selecciona una carpeta', 'error');
+    if (!State.activeUrl) {
+        showToast('Por favor introduce un enlace válido', 'error');
         return;
     }
 
     try {
-        const format = State.selectedFormat || 'mp3';
-        const quality = State.selectedFormat === 'mp4' ? State.selectedQuality : 'best';
+        const result = await window.electronAPI.addToQueue(
+            State.activeUrl,
+            State.selectedFormat,
+            State.selectedQuality,
+            { embedMetadata: true }
+        );
 
-        const result = await window.electronAPI.addToQueue(url, format, quality);
         if (result.success) {
-            showToast(`Descargando ${format.toUpperCase()}...`, 'success');
-            window.electronAPI.startQueue();
+            showToast('Añadido a la cola de descargas', 'success');
+            await window.electronAPI.startQueue();
 
-            // Reset UI
             if (DOM.urlInput) DOM.urlInput.value = '';
             if (DOM.videoPreview) DOM.videoPreview.classList.add('hidden');
             if (DOM.formatSelector) DOM.formatSelector.classList.add('hidden');
             if (DOM.btnDownload) DOM.btnDownload.classList.add('hidden');
-            State.currentVideoInfo = null;
+            State.activeUrl = null;
 
-            // Switch to downloads
             switchTab('downloads');
         } else {
             showToast(result.message || 'Error al añadir', 'error');
@@ -421,39 +483,59 @@ async function handleDownload() {
     }
 }
 
+async function handleSelectFolder() {
+    try {
+        const result = await window.electronAPI.setDownloadFolder();
+        if (result.success && result.folder) {
+            State.downloadFolder = result.folder;
+            updateFolderDisplay();
+            showToast('Carpeta seleccionada', 'success');
+        }
+    } catch (e) {
+        showToast('Error al seleccionar carpeta', 'error');
+    }
+}
+
+function updateFolderDisplay() {
+    if (DOM.folderPath) {
+        DOM.folderPath.textContent = State.downloadFolder || 'Seleccionar carpeta...';
+    }
+}
+
 // =========================================
-// Search
+// Search Handlers (Buscador Avanzado)
 // =========================================
 async function handleSearch(query) {
-    console.log('[App] Searching:', query);
-
     if (!DOM.searchResults) return;
 
-    DOM.searchResults.innerHTML = '<p class="empty-message">Buscando...</p>';
+    DOM.searchResults.innerHTML =
+        '<p class="empty-message">Buscando resultados en alta fidelidad...</p>';
 
     try {
-        const response = await window.electronAPI.searchYouTube(query, 10);
-
-        // API returns { success, results }
+        const response = await window.electronAPI.searchYouTube(query, 15, State.searchFilter);
         const results = response?.results || [];
 
         if (!results || results.length === 0) {
-            DOM.searchResults.innerHTML = '<p class="empty-message">No se encontraron resultados</p>';
+            DOM.searchResults.innerHTML =
+                '<p class="empty-message">No se encontraron resultados</p>';
             return;
         }
 
-        DOM.searchResults.innerHTML = results.map(item => `
+        DOM.searchResults.innerHTML = results
+            .map(
+                (item) => `
             <div class="search-item" data-url="${item.url || item.webpage_url}">
                 <img src="${item.thumbnail || ''}" alt="" class="search-thumb">
                 <div class="search-info">
-                    <p class="search-title">${escapeHtml(item.title)}</p>
-                    <p class="search-channel">${escapeHtml(item.uploader || item.channel || '')}</p>
+                    <p class="search-title">${escapeHtml(item.cleanTitle || item.title)}</p>
+                    <p class="search-channel">${escapeHtml(item.cleanArtist || item.uploader || item.channel || '')}</p>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
 
-        // Add click handlers
-        DOM.searchResults.querySelectorAll('.search-item').forEach(item => {
+        DOM.searchResults.querySelectorAll('.search-item').forEach((item) => {
             item.addEventListener('click', () => {
                 const url = item.dataset.url;
                 if (url) {
@@ -463,7 +545,6 @@ async function handleSearch(query) {
                 }
             });
         });
-
     } catch (e) {
         console.error('Search error:', e);
         DOM.searchResults.innerHTML = '<p class="empty-message">Error en la búsqueda</p>';
@@ -471,242 +552,199 @@ async function handleSearch(query) {
 }
 
 // =========================================
-// Spotify
+// Spotify Handlers
 // =========================================
 async function handleLoadSpotifyPlaylist(url) {
-    console.log('[App] Loading Spotify playlist:', url);
-
     if (DOM.spotifyLoading) DOM.spotifyLoading.classList.remove('hidden');
     if (DOM.playlistPreview) DOM.playlistPreview.classList.add('hidden');
     if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.add('hidden');
 
     try {
         const response = await window.electronAPI.parseSpotifyPlaylist(url);
-
         if (DOM.spotifyLoading) DOM.spotifyLoading.classList.add('hidden');
 
-        // API returns { success, playlist } or { success, message }
         if (!response || !response.success || !response.playlist) {
             showToast(response?.message || 'No se pudo cargar la playlist', 'error');
             return;
         }
 
         const playlist = response.playlist;
-        console.log('[App] Got playlist:', playlist.name, playlist.tracks?.length, 'tracks');
+        if (DOM.playlistCover) DOM.playlistCover.src = playlist.cover || '';
+        if (DOM.playlistName) DOM.playlistName.textContent = playlist.name || 'Playlist';
+        if (DOM.playlistCount)
+            DOM.playlistCount.textContent = `${playlist.tracks?.length || 0} canciones`;
 
-        if (!playlist.tracks || playlist.tracks.length === 0) {
-            showToast('La playlist está vacía', 'error');
-            return;
-        }
-
-        // Show playlist info
-        if (DOM.playlistCover) DOM.playlistCover.src = playlist.thumbnail || '';
-        if (DOM.playlistName) DOM.playlistName.textContent = playlist.title || 'Playlist';
-        if (DOM.playlistCount) DOM.playlistCount.textContent = `${playlist.tracks.length} canciones`;
-
-        // Show tracks
         if (DOM.trackList) {
-            DOM.trackList.innerHTML = playlist.tracks.slice(0, 50).map((track, i) => `
-                <div class="track-item">
-                    <span class="track-number">${i + 1}</span>
+            DOM.trackList.innerHTML = (playlist.tracks || [])
+                .map(
+                    (track, index) => `
+                <div class="track-item" data-index="${index}">
+                    <span class="track-number">${index + 1}</span>
                     <div class="track-details">
                         <span class="track-title">${escapeHtml(track.name)}</span>
-                        <span class="track-artist">${escapeHtml(track.artist || track.artists?.[0] || '')}</span>
+                        <span class="track-artist">${escapeHtml(track.artist)}</span>
                     </div>
-                    <button class="btn-icon-small btn-download-track" data-index="${i}" title="Descargar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                    </button>
                 </div>
-            `).join('');
-
-            // Add click handlers for single track download
-            DOM.trackList.querySelectorAll('.btn-download-track').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const index = parseInt(btn.dataset.index);
-                    handleDownloadSingleSpotifyTrack(index);
-                });
-            });
+            `
+                )
+                .join('');
         }
 
         if (DOM.playlistPreview) DOM.playlistPreview.classList.remove('hidden');
-        if (DOM.btnDownloadPlaylist) {
-            DOM.btnDownloadPlaylist.classList.remove('hidden');
-            if (DOM.downloadPlaylistText) {
-                DOM.downloadPlaylistText.textContent = `DESCARGAR TODO (${playlist.tracks.length})`;
-            }
-        }
+        if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.remove('hidden');
 
-        // Store tracks
-        State.spotifyTracks = playlist.tracks;
-
+        State.currentSpotifyPlaylist = playlist;
     } catch (e) {
         console.error('Spotify error:', e);
         if (DOM.spotifyLoading) DOM.spotifyLoading.classList.add('hidden');
-        showToast('Error al cargar playlist', 'error');
+        showToast('Error al cargar Spotify', 'error');
     }
 }
 
 async function handleDownloadSpotifyPlaylist() {
-    const tracks = State.spotifyTracks;
-    if (!tracks || tracks.length === 0) {
-        showToast('No hay canciones para descargar', 'error');
-        return;
-    }
-
-    if (!State.downloadFolder) {
-        showToast('Selecciona una carpeta primero', 'error');
+    if (!State.currentSpotifyPlaylist || !State.currentSpotifyPlaylist.tracks) {
+        showToast('No hay playlist cargada', 'error');
         return;
     }
 
     try {
-        const response = await window.electronAPI.downloadSpotifyPlaylist(tracks, 'mp3', State.downloadFolder);
+        const tracks = State.currentSpotifyPlaylist.tracks;
+        const result = await window.electronAPI.downloadSpotifyPlaylist(tracks, 'mp3');
 
-        if (response.success) {
-            showToast(`Añadidas ${response.addedCount} canciones a la cola`, 'success');
-            window.electronAPI.startQueue();
+        if (result.success) {
+            showToast(`¡Añadidas ${tracks.length} canciones a la cola!`, 'success');
+            await window.electronAPI.startQueue();
 
-            // Switch to downloads tab
+            if (DOM.spotifyInput) DOM.spotifyInput.value = '';
+            if (DOM.playlistPreview) DOM.playlistPreview.classList.add('hidden');
+            if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.add('hidden');
+
             switchTab('downloads');
-
-            // Allow time for queues to update before switching
-            setTimeout(() => {
-                // Reset Spotify UI slightly if needed, or keep it visible
-            }, 500);
         } else {
-            showToast(response.message || 'Error al descargar playlist', 'error');
+            showToast(result.message || 'Error al añadir canciones', 'error');
         }
     } catch (e) {
         console.error('Spotify download error:', e);
-        showToast('Error al iniciar descargas', 'error');
-    }
-}
-
-async function handleDownloadSingleSpotifyTrack(index) {
-    const tracks = State.spotifyTracks;
-    if (!tracks || !tracks[index]) return;
-
-    const track = tracks[index];
-    console.log('[App] Downloading single track:', track.name);
-
-    if (!State.downloadFolder) {
-        showToast('Selecciona una carpeta primero', 'error');
-        return;
-    }
-
-    try {
-        // Reuse downloadSpotifyPlaylist but send only 1 track
-        const response = await window.electronAPI.downloadSpotifyPlaylist([track], 'mp3', State.downloadFolder);
-
-        if (response.success) {
-            showToast(`Añadida: ${track.name}`, 'success');
-            window.electronAPI.startQueue();
-
-            // Do NOT switch tabs, let user download more if they want
-            // Update badge so they know it's happening
-            updateBadge();
-        } else {
-            showToast(response.message || 'Error al descargar canción', 'error');
-        }
-    } catch (e) {
-        console.error('Track download error:', e);
-        showToast('Error al descargar', 'error');
+        showToast('Error al procesar descargas de Spotify', 'error');
     }
 }
 
 // =========================================
-// Folder Selection
-// =========================================
-async function handleSelectFolder() {
-    try {
-        const result = await window.electronAPI.setDownloadFolder();
-        if (result.success && result.folder) {
-            State.downloadFolder = result.folder;
-            updateFolderDisplay();
-            showToast('Carpeta seleccionada');
-        }
-    } catch (e) {
-        console.error('Folder select error:', e);
-    }
-}
-
-function updateFolderDisplay() {
-    if (DOM.folderPath && State.downloadFolder) {
-        const folderName = State.downloadFolder.split(/[/\\]/).pop();
-        DOM.folderPath.textContent = folderName || State.downloadFolder;
-    }
-}
-
-// =========================================
-// Downloads List
+// Queue UI Rendering
 // =========================================
 function updateDownloadsList() {
     if (!DOM.downloadsList) return;
 
-    const downloads = State.downloads || [];
-
-    if (downloads.length === 0) {
-        DOM.downloadsList.innerHTML = `
-            <p class="empty-message">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Las descargas aparecerán aquí
-            </p>
-        `;
+    if (!State.downloads || State.downloads.length === 0) {
+        DOM.emptyDownloads?.classList.remove('hidden');
+        DOM.downloadsList.innerHTML = '';
+        DOM.downloadsList.appendChild(DOM.emptyDownloads);
         return;
     }
 
-    DOM.downloadsList.innerHTML = downloads.map(item => `
-        <div class="download-item" data-id="${item.id}">
-            <img src="${item.thumbnail || ''}" alt="" class="download-thumb">
-            <div class="download-info">
-                <p class="download-title">${escapeHtml(item.title || 'Descargando...')}</p>
-                <div class="download-progress">
-                    <div class="download-progress-bar ${item.status === 'completed' ? 'complete' : ''}" 
-                         style="width: ${item.progress || 0}%"></div>
-                </div>
-                <div class="download-status">
-                    <span class="download-badge ${item.format}">${item.format?.toUpperCase() || 'MP3'}</span>
-                    <span>${getStatusText(item.status, item.progress)}</span>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    DOM.emptyDownloads?.classList.add('hidden');
+
+    const fragment = document.createDocumentFragment();
+    State.downloads.forEach((item) => {
+        const itemEl = createDownloadItemElement(item);
+        fragment.appendChild(itemEl);
+    });
+
+    DOM.downloadsList.innerHTML = '';
+    DOM.downloadsList.appendChild(fragment);
 }
 
-function getStatusText(status, progress) {
+function createDownloadItemElement(item) {
+    const div = document.createElement('div');
+    div.className = 'download-item';
+    div.dataset.id = item.id;
+
+    const isDownloading = item.status === 'downloading' || item.status === 'converting';
+    const isError = item.status === 'error';
+    const isCompleted = item.status === 'completed';
+
+    div.innerHTML = `
+        <img class="download-thumb" src="${item.thumbnail || ''}" alt="" />
+        <div class="download-info">
+            <h4 class="download-title">${escapeHtml(item.title || 'Descargando...')}</h4>
+            <div class="download-progress ${isDownloading ? '' : 'hidden'}">
+                <div class="download-progress-bar ${isCompleted ? 'complete' : ''}" style="width: ${item.progress || 0}%"></div>
+            </div>
+            <div class="download-status">
+                <span class="download-badge ${item.format}">${item.format.toUpperCase()}</span>
+                <span>${getStatusText(item.status, item.progress, item.error)}</span>
+            </div>
+        </div>
+        <div class="download-actions">
+            ${
+                isCompleted && item.filePath
+                    ? `
+                <button class="btn-ghost btn-open-file" title="Abrir archivo" data-path="${escapeHtml(item.filePath)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </button>
+            `
+                    : ''
+            }
+            <button class="btn-ghost btn-remove" title="Eliminar" data-id="${item.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    div.querySelector('.btn-remove')?.addEventListener('click', async () => {
+        await window.electronAPI.removeFromQueue(item.id);
+    });
+
+    div.querySelector('.btn-open-file')?.addEventListener('click', (e) => {
+        const filePath = e.currentTarget.dataset.path;
+        if (filePath) {
+            window.electronAPI.openFolder(filePath);
+        }
+    });
+
+    return div;
+}
+
+function getStatusText(status, progress, error) {
     switch (status) {
-        case 'completed': return '✓ Completado';
-        case 'downloading': return `${progress || 0}%`;
-        case 'converting': return 'Convirtiendo...';
-        case 'error': return '✗ Error';
-        default: return 'Esperando...';
+        case 'pending':
+            return 'En espera...';
+        case 'searching':
+            return 'Buscando audio en YouTube...';
+        case 'downloading':
+            return `Descargando... ${progress || 0}%`;
+        case 'converting':
+            return `Convertiendo... ${progress || 0}%`;
+        case 'completed':
+            return '¡Completado!';
+        case 'error':
+            return `Error: ${error || 'Fallo en descarga'}`;
+        default:
+            return status;
     }
 }
 
 function updateBadge() {
-    const active = (State.downloads || []).filter(d =>
-        d.status === 'downloading' || d.status === 'pending' || d.status === 'converting'
+    if (!DOM.downloadsBadge) return;
+    const activeCount = State.downloads.filter(
+        (i) => i.status === 'pending' || i.status === 'downloading' || i.status === 'converting'
     ).length;
 
-    if (DOM.downloadsBadge) {
-        DOM.downloadsBadge.textContent = active > 0 ? active : '';
-    }
+    DOM.downloadsBadge.textContent = activeCount > 0 ? activeCount : '';
 }
 
 // =========================================
-// Toast
+// Toast Notifications
 // =========================================
 let toastTimeout;
 function showToast(message, type = 'info') {
-    console.log(`[Toast] ${type}: ${message}`);
-
     if (!DOM.toast || !DOM.toastMessage) return;
 
     DOM.toastMessage.textContent = message;

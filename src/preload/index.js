@@ -13,8 +13,8 @@ const electronAPI = {
     /**
      * Agrega una URL a la cola de descargas
      */
-    addToQueue: (url, format = 'mp3', quality = null) =>
-        ipcRenderer.invoke('youtube:add-to-queue', { url, format, quality }),
+    addToQueue: (url, format = 'mp3', quality = null, options = {}) =>
+        ipcRenderer.invoke('youtube:add-to-queue', { url, format, quality, options }),
 
     /**
      * Obtiene la cola actual
@@ -40,6 +40,7 @@ const electronAPI = {
      * Obtiene información de un video de YouTube
      */
     getYouTubeInfo: (url) => ipcRenderer.invoke('youtube:get-info', { url }),
+    getVideoInfo: (url) => ipcRenderer.invoke('youtube:get-info', { url }),
 
     /**
      * Verifica si yt-dlp está listo
@@ -57,9 +58,10 @@ const electronAPI = {
     clearCache: () => ipcRenderer.invoke('youtube:clear-cache'),
 
     /**
-     * Busca videos en YouTube
+     * Busca videos o pistas de audio en YouTube con Smart Ranking
      */
-    searchYouTube: (query, limit = 10) => ipcRenderer.invoke('youtube:search', { query, limit }),
+    searchYouTube: (query, limit = 15, type = 'all') =>
+        ipcRenderer.invoke('youtube:search', { query, limit, type }),
 
     /**
      * Escucha actualizaciones de la cola
@@ -70,8 +72,7 @@ const electronAPI = {
     /**
      * Escucha cuando la cola termina
      */
-    onQueueComplete: (callback) =>
-        ipcRenderer.on('youtube:queue-complete', () => callback()),
+    onQueueComplete: (callback) => ipcRenderer.on('youtube:queue-complete', () => callback()),
 
     // =====================================
     // Converter
@@ -80,8 +81,7 @@ const electronAPI = {
     convertFile: (inputPath, targetFormat) =>
         ipcRenderer.invoke('converter:convert', { inputPath, targetFormat }),
 
-    getMetadata: (filePath) =>
-        ipcRenderer.invoke('converter:get-metadata', { filePath }),
+    getMetadata: (filePath) => ipcRenderer.invoke('converter:get-metadata', { filePath }),
 
     onConversionProgress: (callback) =>
         ipcRenderer.on('converter:progress', (_, data) => callback(data)),
@@ -90,17 +90,13 @@ const electronAPI = {
     // Files
     // =====================================
 
-    selectFile: (type = 'all') =>
-        ipcRenderer.invoke('files:select', { type }),
+    selectFile: (type = 'all') => ipcRenderer.invoke('files:select', { type }),
 
-    selectMultipleFiles: (type = 'all') =>
-        ipcRenderer.invoke('files:select-multiple', { type }),
+    selectMultipleFiles: (type = 'all') => ipcRenderer.invoke('files:select-multiple', { type }),
 
-    getFileInfo: (filePath) =>
-        ipcRenderer.invoke('files:get-info', { filePath }),
+    getFileInfo: (filePath) => ipcRenderer.invoke('files:get-info', { filePath }),
 
-    openFolder: (folderPath) =>
-        ipcRenderer.invoke('files:open-folder', { folderPath }),
+    openFolder: (folderPath) => ipcRenderer.invoke('files:open-folder', { folderPath }),
 
     // =====================================
     // Clipboard & External
@@ -128,10 +124,9 @@ const electronAPI = {
     // =====================================
 
     /**
-     * Parsea una playlist de Spotify
+     * Parsea una playlist o canción de Spotify
      */
-    parseSpotifyPlaylist: (url) =>
-        ipcRenderer.invoke('spotify:parse-playlist', { url }),
+    parseSpotifyPlaylist: (url) => ipcRenderer.invoke('spotify:parse-playlist', { url }),
 
     /**
      * Descarga canciones de una playlist de Spotify
@@ -142,8 +137,7 @@ const electronAPI = {
     /**
      * Cancela las descargas de Spotify pendientes
      */
-    cancelSpotifyDownload: () =>
-        ipcRenderer.invoke('spotify:cancel'),
+    cancelSpotifyDownload: () => ipcRenderer.invoke('spotify:cancel'),
 
     /**
      * Escucha progreso de descargas de Spotify
