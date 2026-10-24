@@ -105,14 +105,17 @@ function init() {
         searchFilters: $('search-filters'),
 
         // Spotify
+        spotifyForm: $('spotify-form'),
         spotifyInput: $('spotify-input'),
-        btnLoadPlaylist: $('btn-load-playlist'),
-        spotifyLoading: $('spotify-loading'),
+        spotifySkeleton: $('spotify-skeleton'),
         playlistPreview: $('playlist-preview'),
         playlistCover: $('playlist-cover'),
         playlistName: $('playlist-name'),
         playlistCount: $('playlist-count'),
         trackList: $('track-list'),
+        btnSelectAll: $('btn-select-all'),
+        btnSelectNone: $('btn-select-none'),
+        selectionCount: $('selection-count'),
         btnDownloadPlaylist: $('btn-download-playlist'),
 
         // Downloads
@@ -504,14 +507,24 @@ function setupEventListeners() {
         });
     }
 
-    // Spotify
-    if (DOM.btnLoadPlaylist) {
-        DOM.btnLoadPlaylist.addEventListener('click', () => {
+    // Spotify - submit (botón + tecla Go del teclado móvil)
+    if (DOM.spotifyForm) {
+        DOM.spotifyForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             const url = DOM.spotifyInput?.value.trim();
             if (url) {
                 handleLoadSpotifyPlaylist(url);
+                DOM.spotifyInput?.blur();
             }
         });
+    }
+
+    // Spotify - selección de canciones
+    if (DOM.btnSelectAll) {
+        DOM.btnSelectAll.addEventListener('click', () => setAllTracksSelected(true));
+    }
+    if (DOM.btnSelectNone) {
+        DOM.btnSelectNone.addEventListener('click', () => setAllTracksSelected(false));
     }
 
     if (DOM.btnDownloadPlaylist) {
@@ -1105,8 +1118,8 @@ function syncResultCards() {
 // Spotify Handlers
 // =========================================
 async function handleLoadSpotifyPlaylist(url) {
-    if (DOM.spotifyLoading) {
-        DOM.spotifyLoading.classList.remove('hidden');
+    if (DOM.spotifySkeleton) {
+        DOM.spotifySkeleton.classList.remove('hidden');
     }
     if (DOM.playlistPreview) {
         DOM.playlistPreview.classList.add('hidden');
@@ -1117,8 +1130,8 @@ async function handleLoadSpotifyPlaylist(url) {
 
     try {
         const response = await Api.parseSpotifyPlaylist(url);
-        if (DOM.spotifyLoading) {
-            DOM.spotifyLoading.classList.add('hidden');
+        if (DOM.spotifySkeleton) {
+            DOM.spotifySkeleton.classList.add('hidden');
         }
 
         if (!response || !response.success || !response.playlist) {
@@ -1133,25 +1146,10 @@ async function handleLoadSpotifyPlaylist(url) {
         if (DOM.playlistName) {
             DOM.playlistName.textContent = playlist.name || 'Playlist';
         }
-        if (DOM.playlistCount) {
-            DOM.playlistCount.textContent = `${playlist.tracks?.length || 0} canciones`;
-        }
 
-        if (DOM.trackList) {
-            DOM.trackList.innerHTML = (playlist.tracks || [])
-                .map(
-                    (track, index) => `
-                <div class="track-item" data-index="${index}">
-                    <span class="track-number">${index + 1}</span>
-                    <div class="track-details">
-                        <span class="track-title">${escapeHtml(track.name)}</span>
-                        <span class="track-artist">${escapeHtml(track.artist)}</span>
-                    </div>
-                </div>
-            `
-                )
-                .join('');
-        }
+        State.currentSpotifyPlaylist = playlist;
+        renderTrackList(playlist.tracks || []);
+        updateSelectionCount();
 
         if (DOM.playlistPreview) {
             DOM.playlistPreview.classList.remove('hidden');
@@ -1159,29 +1157,106 @@ async function handleLoadSpotifyPlaylist(url) {
         if (DOM.btnDownloadPlaylist) {
             DOM.btnDownloadPlaylist.classList.remove('hidden');
         }
-
-        State.currentSpotifyPlaylist = playlist;
     } catch (e) {
         console.error('Spotify error:', e);
-        if (DOM.spotifyLoading) {
-            DOM.spotifyLoading.classList.add('hidden');
+        if (DOM.spotifySkeleton) {
+            DOM.spotifySkeleton.classList.add('hidden');
         }
         showToast('Error al cargar Spotify', 'error');
     }
 }
 
+/** Lista de canciones seleccionables (tap en la fila para marcar/desmarcar) */
+function renderTrackList(tracks) {
+    if (!DOM.trackList) {
+        return;
+    }
+    DOM.trackList.innerHTML = tracks
+        .map((track, index) => {
+            const selected = track.selected !== false;
+            // Spotify embed entrega la duración en milisegundos
+            const dur =
+                Number.isFinite(track.duration) && track.duration > 10000
+                    ? formatDuration(track.duration / 1000)
+                    : Number.isFinite(track.duration) && track.duration > 0
+                        ? formatDuration(track.duration)
+                        : '';
+            return `
+            <button type="button" class="track-row${selected ? ' selected' : ''}" data-index="${index}" aria-pressed="${selected}">
+                <span class="track-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </span>
+                <span class="track-details">
+                    <span class="track-title">${escapeHtml(track.name)}</span>
+                    <span class="track-artist">${escapeHtml(track.artist)}</span>
+                </span>
+                ${dur ? `<span class="track-duration">${dur}</span>` : ''}
+            </button>
+        `;
+        })
+        .join('');
+
+    DOM.trackList.querySelectorAll('.track-row').forEach((row) => {
+        row.addEventListener('click', () => {
+            const track = State.currentSpotifyPlaylist?.tracks?.[Number(row.dataset.index)];
+            if (!track) {
+                return;
+            }
+            track.selected = track.selected === false;
+            const nowSelected = track.selected !== false;
+            row.classList.toggle('selected', nowSelected);
+            row.setAttribute('aria-pressed', String(nowSelected));
+            updateSelectionCount();
+        });
+    });
+}
+
+function setAllTracksSelected(selected) {
+    const tracks = State.currentSpotifyPlaylist?.tracks;
+    if (!tracks) {
+        return;
+    }
+    tracks.forEach((t) => (t.selected = selected));
+    DOM.trackList?.querySelectorAll('.track-row').forEach((row) => {
+        row.classList.toggle('selected', selected);
+        row.setAttribute('aria-pressed', String(selected));
+    });
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const tracks = State.currentSpotifyPlaylist?.tracks || [];
+    const count = tracks.filter((t) => t.selected !== false).length;
+
+    if (DOM.selectionCount) {
+        DOM.selectionCount.textContent = `${count} de ${tracks.length}`;
+    }
+    if (DOM.playlistCount) {
+        DOM.playlistCount.textContent =
+            tracks.length > 0 ? `${tracks.length} canciones` : 'Sin canciones';
+    }
+    if (DOM.btnDownloadPlaylist) {
+        DOM.btnDownloadPlaylist.disabled = count === 0;
+        DOM.btnDownloadPlaylist.textContent =
+            count === 0 ? 'Selecciona canciones' : `Descargar ${count} canciones`;
+    }
+}
+
 async function handleDownloadSpotifyPlaylist() {
-    if (!State.currentSpotifyPlaylist || !State.currentSpotifyPlaylist.tracks) {
-        showToast('No hay playlist cargada', 'error');
+    const tracks = State.currentSpotifyPlaylist?.tracks || [];
+    const selected = tracks.filter((t) => t.selected !== false);
+    if (selected.length === 0) {
+        showToast('Selecciona al menos una canción', 'error');
         return;
     }
 
     try {
-        const tracks = State.currentSpotifyPlaylist.tracks;
-        const result = await Api.addSpotifyTracks(tracks, 'mp3');
+        const result = await Api.addSpotifyTracks(selected, 'mp3');
 
         if (result.success) {
-            showToast(`¡Añadidas ${tracks.length} canciones a la cola!`, 'success');
+            showToast(`¡Añadidas ${selected.length} canciones a la cola!`, 'success');
             await Api.startQueue();
 
             if (DOM.spotifyInput) {
@@ -1235,6 +1310,7 @@ function updateDownloadsList() {
             const created = createDownloadItemElement(item);
             created.dataset.signature = signature;
             downloadItemElements.set(key, created);
+            DOM.downloadsList.appendChild(created);
         } else if (el.dataset.signature !== signature) {
             const fresh = createDownloadItemElement(item);
             fresh.dataset.signature = signature;
@@ -1264,9 +1340,10 @@ function createDownloadItemElement(item) {
 
     const isDownloading = item.status === 'downloading' || item.status === 'converting';
     const isCompleted = item.status === 'completed';
+    const isError = item.status === 'error';
 
     div.innerHTML = `
-        <img class="download-thumb" src="${item.thumbnail || ''}" alt="" />
+        <img class="download-thumb" src="${item.thumbnail || ''}" alt="" loading="lazy" />
         <div class="download-info">
             <h4 class="download-title">${escapeHtml(item.title || 'Descargando...')}</h4>
             <div class="download-progress ${isDownloading ? '' : 'hidden'}">
@@ -1274,14 +1351,14 @@ function createDownloadItemElement(item) {
             </div>
             <div class="download-status">
                 <span class="download-badge ${item.format}">${item.format.toUpperCase()}</span>
-                <span>${getStatusText(item)}</span>
+                <span class="download-status-text${isError ? ' error' : ''}${isCompleted ? ' done' : ''}">${getStatusText(item)}</span>
             </div>
         </div>
         <div class="download-actions">
             ${
     isCompleted && item.filePath && State.capabilities.desktopShell
         ? `
-                <button class="btn-ghost btn-open-file" title="Abrir archivo" data-path="${escapeHtml(item.filePath)}">
+                <button class="btn-ghost btn-open-file" title="Abrir archivo" aria-label="Abrir archivo" data-path="${escapeHtml(item.filePath)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
@@ -1291,7 +1368,7 @@ function createDownloadItemElement(item) {
             `
         : ''
 }
-            <button class="btn-ghost btn-remove" title="Eliminar" data-id="${item.id}">
+            <button class="btn-ghost btn-remove" title="Eliminar" aria-label="Eliminar descarga" data-id="${item.id}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>

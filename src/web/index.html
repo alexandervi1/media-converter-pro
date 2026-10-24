@@ -289,37 +289,46 @@
                     </div>
                 </section>
 
-                <!-- SPOTIFY TAB -->
+                <!-- SPOTIFY TAB (mobile-first, con selección de canciones) -->
                 <section class="panel" id="panel-spotify">
                     <div class="spotify-content">
-                        <div class="input-group">
-                            <input
-                                type="text"
-                                class="url-input"
-                                id="spotify-input"
-                                placeholder="Pega el enlace de Spotify (Playlist, Álbum, Canción)..."
-                                autocomplete="off"
-                                spellcheck="false"
-                            />
-                            <button class="btn-spotify" id="btn-load-spotify">
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <span>Cargar</span>
-                            </button>
-                        </div>
+                        <form role="search" class="search-form" id="spotify-form">
+                            <div class="search-field">
+                                <input
+                                    type="search"
+                                    class="search-input"
+                                    id="spotify-input"
+                                    placeholder="Enlace de Spotify"
+                                    enterkeyhint="go"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    aria-label="Enlace de Spotify"
+                                />
+                                <button type="submit" class="search-submit spotify" aria-label="Cargar playlist">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M8 15c2-1 5-1 8 1" />
+                                        <path d="M9 12c1.5-.8 4-.8 6 .5" />
+                                        <path d="M10 9c1.2-.5 3-.5 4 .3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
 
-                        <!-- Loading Spotify -->
-                        <div class="loading-state hidden" id="spotify-loading">
-                            <div class="spinner spotify"></div>
-                            <span>Parseando metadatos de Spotify...</span>
+                        <!-- Skeleton de playlist mientras parsea -->
+                        <div class="playlist-preview skeleton-preview hidden" id="spotify-skeleton" aria-hidden="true">
+                            <div class="playlist-header">
+                                <div class="skeleton playlist-cover"></div>
+                                <div class="playlist-info">
+                                    <div class="skeleton skeleton-line w-70"></div>
+                                    <div class="skeleton skeleton-line w-40"></div>
+                                </div>
+                            </div>
+                            <div class="track-list">
+                                <div class="skeleton skeleton-line w-80"></div>
+                                <div class="skeleton skeleton-line w-70"></div>
+                                <div class="skeleton skeleton-line w-75"></div>
+                            </div>
                         </div>
 
                         <!-- Playlist Preview -->
@@ -338,11 +347,24 @@
                                     <p class="playlist-count" id="playlist-count">0 canciones</p>
                                 </div>
                             </div>
-                            <div class="track-list" id="track-list"></div>
+
+                            <div class="selection-bar">
+                                <button type="button" class="selection-btn" id="btn-select-all">
+                                    Todas
+                                </button>
+                                <button type="button" class="selection-btn" id="btn-select-none">
+                                    Ninguna
+                                </button>
+                                <span class="selection-count" id="selection-count" aria-live="polite">
+                                    0 de 0
+                                </span>
+                            </div>
+
+                            <div class="track-list" id="track-list" role="group" aria-label="Canciones"></div>
                         </div>
 
                         <button class="btn-spotify btn-mega hidden" id="btn-download-playlist">
-                            Descargar Playlist Completa
+                            Descargar canciones
                         </button>
                     </div>
                 </section>
