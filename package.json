@@ -30,8 +30,8 @@
     "build:win": "bun run bundle:renderer && electron-builder --win",
     "build:mac": "bun run bundle:renderer && electron-builder --mac",
     "build:linux": "bun run bundle:renderer && electron-builder --linux",
-    "lint": "eslint src/**/*.js",
-    "lint:fix": "eslint src/**/*.js --fix",
+    "lint": "eslint src/**/*.js scripts/**/*.js",
+    "lint:fix": "eslint src/**/*.js scripts/**/*.js --fix",
     "format": "prettier --write \"src/**/*.{js,css,html}\""
   },
   "dependencies": {
