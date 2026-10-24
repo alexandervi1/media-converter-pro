@@ -579,7 +579,6 @@ class DownloadService {
                                     norm.cleanArtist = clean.artist;
                                 }
                                 return norm;
-                                return norm;
                             })
                             .filter(Boolean);
 

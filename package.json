@@ -7,10 +7,10 @@
     "name": "Media Converter Team"
   },
   "license": "MIT",
-  "homepage": "https://github.com/your-username/media-converter-pro",
+  "homepage": "https://github.com/alexandervi1/media-converter-pro",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/media-converter-pro.git"
+    "url": "https://github.com/alexandervi1/media-converter-pro.git"
   },
   "keywords": [
     "youtube",
@@ -36,9 +36,7 @@
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",
-    "fluent-ffmpeg": "^2.1.2",
-    "yt-dlp-exec": "^1.0.2",
-    "yt-dlp-wrap": "^2.3.12"
+    "fluent-ffmpeg": "^2.1.2"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

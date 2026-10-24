@@ -12,7 +12,6 @@ const { getMainWindow } = require('../window');
 function registerSpotifyHandlers() {
     ipcMain.handle('spotify:parse-playlist', handleParsePlaylist);
     ipcMain.handle('spotify:download-playlist', handleDownloadPlaylist);
-    ipcMain.handle('spotify:cancel', handleCancel);
 
     logger.info('Handlers de Spotify registrados (Refactored)');
 }
@@ -96,12 +95,6 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
     // Cleanest: Renderer receives success, calls 'startQueue'.
 
     return { success: true, message: `Añadidas ${addedCount} canciones a la cola` };
-}
-
-async function handleCancel() {
-    // Con la cola centralizada, "cancelar spotify" sería vaciar los items de spotify pendientes?
-    // Por simplicidad, retornamos éxito y dejamos que el usuario gestione la cola global.
-    return { success: true, message: 'Usa la pestaña Descargas para gestionar la cola' };
 }
 
 function sendQueueUpdate() {

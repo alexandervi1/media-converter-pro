@@ -134,23 +134,6 @@ const electronAPI = {
     downloadSpotifyPlaylist: (tracks, format = 'mp3', folder = null) =>
         ipcRenderer.invoke('spotify:download-playlist', { tracks, format, folder }),
 
-    /**
-     * Cancela las descargas de Spotify pendientes
-     */
-    cancelSpotifyDownload: () => ipcRenderer.invoke('spotify:cancel'),
-
-    /**
-     * Escucha progreso de descargas de Spotify
-     */
-    onSpotifyProgress: (callback) =>
-        ipcRenderer.on('spotify:progress', (_, data) => callback(data)),
-
-    /**
-     * Escucha cuando termina la descarga de Spotify
-     */
-    onSpotifyComplete: (callback) =>
-        ipcRenderer.on('spotify:complete', (_, data) => callback(data)),
-
     // =====================================
     // Settings
     // =====================================
