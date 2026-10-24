@@ -63,7 +63,9 @@ async function handleSaveSettings(event, newSettings) {
     const updated = saveConfig(newSettings);
     if (updated) {
         config = updated;
-        if (updated.downloadFolder) downloadFolder = updated.downloadFolder;
+        if (updated.downloadFolder) {
+            downloadFolder = updated.downloadFolder;
+        }
         return { success: true };
     }
     return { success: false };
@@ -138,7 +140,9 @@ async function handleStartQueue() {
 
 async function handleGetVideoInfo(event, { url }) {
     const info = await DownloadService.getVideoInfo(url);
-    if (info) return { success: true, info };
+    if (info) {
+        return { success: true, info };
+    }
     return { success: false, message: 'No se pudo obtener información' };
 }
 
@@ -162,7 +166,9 @@ async function handleSearch(event, { query, limit = 15, type = 'all' }) {
 // ==========================================
 
 async function processQueueLoop() {
-    if (QueueService.getProcessing()) return;
+    if (QueueService.getProcessing()) {
+        return;
+    }
 
     const pending = QueueService.getPending();
     if (pending.length === 0) {
@@ -172,9 +178,11 @@ async function processQueueLoop() {
 
     QueueService.setProcessing(true);
 
-    while (true) {
+    for (;;) {
         const nextItem = QueueService.getPending()[0];
-        if (!nextItem) break;
+        if (!nextItem) {
+            break;
+        }
 
         await processSingleItem(nextItem);
     }
@@ -182,7 +190,9 @@ async function processQueueLoop() {
     QueueService.setProcessing(false);
 
     const mainWindow = getMainWindow();
-    if (mainWindow) mainWindow.webContents.send('youtube:queue-complete');
+    if (mainWindow) {
+        mainWindow.webContents.send('youtube:queue-complete');
+    }
 }
 
 async function processSingleItem(item) {
@@ -215,8 +225,8 @@ async function processSingleItem(item) {
                     throw new Error(`No se encontró video en YouTube para: ${query}`);
                 }
             } catch (e) {
-                logger.error(`Excepción interna en búsqueda:`, e);
-                throw new Error('Falló búsqueda en YouTube: ' + e.message);
+                logger.error('Excepción interna en búsqueda:', e);
+                throw new Error(`Falló búsqueda en YouTube: ${  e.message}`);
             }
         }
 
@@ -293,7 +303,9 @@ async function processSingleItem(item) {
 
             try {
                 fs.unlinkSync(tempWebmPath);
-            } catch (e) {}
+            } catch (e) {
+                /* el temporal ya pudo haber sido limpiado */
+            }
         }
 
         // --- FASE 2: RENOMBRADO Y METADATOS LIMPIOS ---
@@ -334,8 +346,8 @@ async function processSingleItem(item) {
             freshItem && freshItem.title && freshItem.title !== 'Obteniendo título...'
                 ? freshItem.title
                 : item.title && item.title !== 'Obteniendo título...'
-                  ? item.title
-                  : videoId;
+                    ? item.title
+                    : videoId;
 
         const cleanMeta = parseCleanMetadata(rawTitle, freshItem?.uploader || item.artist);
         const desiredBaseName = sanitizeFileName(cleanMeta.title);
@@ -396,7 +408,9 @@ async function processSingleItem(item) {
                     if (fs.existsSync(coverPath)) {
                         try {
                             fs.unlinkSync(coverPath);
-                        } catch (e) {}
+                        } catch (e) {
+                            /* limpieza best-effort */
+                        }
                     }
                 } catch (e) {
                     logger.warn('Error aplicando metadatos:', e.message);

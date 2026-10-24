@@ -1,11 +1,5 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
-
-// Directorio de logs
-const LOG_DIR = path.join(process.env.APPDATA || process.env.HOME, 'MediaConverterPro', 'logs');
-
 // Niveles de log
 const LOG_LEVELS = {
     ERROR: 'ERROR',
@@ -34,10 +28,10 @@ function formatMessage(level, message, args) {
     const timestamp = new Date().toISOString();
     const argsStr =
         args.length > 0
-            ? ' ' +
-              args
-                  .map((a) => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)))
-                  .join(' ')
+            ? ` ${ 
+                args
+                    .map((a) => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)))
+                    .join(' ')}`
             : '';
     return `[${timestamp}] [${level}] ${message}${argsStr}`;
 }

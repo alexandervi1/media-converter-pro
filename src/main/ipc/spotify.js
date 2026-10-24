@@ -38,7 +38,7 @@ async function handleParsePlaylist(event, args) {
 /**
  * Añade las canciones de Spotify a la cola global
  */
-async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder }) {
+async function handleDownloadPlaylist(event, { tracks, format = 'mp3' }) {
     if (!tracks || tracks.length === 0) {
         return { success: false, message: 'No hay canciones para descargar' };
     }
@@ -61,7 +61,7 @@ async function handleDownloadPlaylist(event, { tracks, format = 'mp3', folder })
         QueueService.add({
             url: null, // Se resolverá despues
             searchQuery: `${track.artist} - ${track.name} audio`,
-            format: format,
+            format,
             title: `${track.artist} - ${track.name}`, // Título provisional
             artist: track.artist,
             name: track.name,

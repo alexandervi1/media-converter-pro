@@ -61,6 +61,6 @@ process.on('uncaughtException', (error) => {
     logger.error('Error no capturado:', error);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     logger.error('Promesa rechazada no manejada:', reason);
 });

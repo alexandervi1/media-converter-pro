@@ -140,7 +140,9 @@ async function loadInitialData() {
 // Drawer & Theme Control
 // =========================================
 function toggleDrawer(open) {
-    if (!DOM.settingsDrawer || !DOM.drawerOverlay) return;
+    if (!DOM.settingsDrawer || !DOM.drawerOverlay) {
+        return;
+    }
     const shouldOpen = open !== undefined ? open : DOM.settingsDrawer.classList.contains('hidden');
 
     if (shouldOpen) {
@@ -201,10 +203,18 @@ function setupEventListeners() {
     }
 
     // Tab navigation
-    if (DOM.tabHome) DOM.tabHome.addEventListener('click', () => switchTab('home'));
-    if (DOM.tabSearch) DOM.tabSearch.addEventListener('click', () => switchTab('search'));
-    if (DOM.tabSpotify) DOM.tabSpotify.addEventListener('click', () => switchTab('spotify'));
-    if (DOM.tabDownloads) DOM.tabDownloads.addEventListener('click', () => switchTab('downloads'));
+    if (DOM.tabHome) {
+        DOM.tabHome.addEventListener('click', () => switchTab('home'));
+    }
+    if (DOM.tabSearch) {
+        DOM.tabSearch.addEventListener('click', () => switchTab('search'));
+    }
+    if (DOM.tabSpotify) {
+        DOM.tabSpotify.addEventListener('click', () => switchTab('spotify'));
+    }
+    if (DOM.tabDownloads) {
+        DOM.tabDownloads.addEventListener('click', () => switchTab('downloads'));
+    }
 
     // Home - Paste button
     if (DOM.btnPaste) {
@@ -215,7 +225,9 @@ function setupEventListeners() {
     if (DOM.urlInput) {
         DOM.urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                if (urlDebounceTimeout) clearTimeout(urlDebounceTimeout);
+                if (urlDebounceTimeout) {
+                    clearTimeout(urlDebounceTimeout);
+                }
                 const url = DOM.urlInput.value.trim();
                 if (url && isValidYouTubeUrl(url)) {
                     fetchVideoInfo(url);
@@ -224,7 +236,9 @@ function setupEventListeners() {
         });
 
         DOM.urlInput.addEventListener('input', () => {
-            if (urlDebounceTimeout) clearTimeout(urlDebounceTimeout);
+            if (urlDebounceTimeout) {
+                clearTimeout(urlDebounceTimeout);
+            }
             const url = DOM.urlInput.value.trim();
             if (url && isValidYouTubeUrl(url)) {
                 urlDebounceTimeout = setTimeout(() => {
@@ -256,7 +270,9 @@ function setupEventListeners() {
     if (DOM.btnSearch) {
         DOM.btnSearch.addEventListener('click', () => {
             const query = DOM.searchInput?.value.trim();
-            if (query) handleSearch(query);
+            if (query) {
+                handleSearch(query);
+            }
         });
     }
 
@@ -264,7 +280,9 @@ function setupEventListeners() {
         DOM.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const query = DOM.searchInput.value.trim();
-                if (query) handleSearch(query);
+                if (query) {
+                    handleSearch(query);
+                }
             }
         });
     }
@@ -279,7 +297,9 @@ function setupEventListeners() {
                 State.searchFilter = chip.dataset.type || 'all';
 
                 const query = DOM.searchInput?.value.trim();
-                if (query) handleSearch(query);
+                if (query) {
+                    handleSearch(query);
+                }
             });
         });
     }
@@ -288,7 +308,9 @@ function setupEventListeners() {
     if (DOM.btnLoadPlaylist) {
         DOM.btnLoadPlaylist.addEventListener('click', () => {
             const url = DOM.spotifyInput?.value.trim();
-            if (url) handleLoadSpotifyPlaylist(url);
+            if (url) {
+                handleLoadSpotifyPlaylist(url);
+            }
         });
     }
 
@@ -315,7 +337,9 @@ function setupEventListeners() {
     if (DOM.btnCache) {
         DOM.btnCache.addEventListener('click', async () => {
             const res = await window.electronAPI.clearCache();
-            if (res.success) showToast('Caché limpiado correctamente', 'success');
+            if (res.success) {
+                showToast('Caché limpiado correctamente', 'success');
+            }
         });
     }
 }
@@ -333,22 +357,22 @@ function switchTab(tabName) {
     panels.forEach((panel) => panel?.classList.remove('active'));
 
     switch (tabName) {
-        case 'home':
-            DOM.tabHome?.classList.add('active');
-            DOM.panelHome?.classList.add('active');
-            break;
-        case 'search':
-            DOM.tabSearch?.classList.add('active');
-            DOM.panelSearch?.classList.add('active');
-            break;
-        case 'spotify':
-            DOM.tabSpotify?.classList.add('active');
-            DOM.panelSpotify?.classList.add('active');
-            break;
-        case 'downloads':
-            DOM.tabDownloads?.classList.add('active');
-            DOM.panelDownloads?.classList.add('active');
-            break;
+    case 'home':
+        DOM.tabHome?.classList.add('active');
+        DOM.panelHome?.classList.add('active');
+        break;
+    case 'search':
+        DOM.tabSearch?.classList.add('active');
+        DOM.panelSearch?.classList.add('active');
+        break;
+    case 'spotify':
+        DOM.tabSpotify?.classList.add('active');
+        DOM.panelSpotify?.classList.add('active');
+        break;
+    case 'downloads':
+        DOM.tabDownloads?.classList.add('active');
+        DOM.panelDownloads?.classList.add('active');
+        break;
     }
 }
 
@@ -391,19 +415,31 @@ async function handlePaste() {
 }
 
 async function fetchVideoInfo(url) {
-    if (State.isFetchingInfo && State.activeUrl === url) return;
+    if (State.isFetchingInfo && State.activeUrl === url) {
+        return;
+    }
 
     State.isFetchingInfo = true;
     State.activeUrl = url;
 
-    if (DOM.loadingState) DOM.loadingState.classList.remove('hidden');
-    if (DOM.videoPreview) DOM.videoPreview.classList.add('hidden');
-    if (DOM.formatSelector) DOM.formatSelector.classList.add('hidden');
-    if (DOM.btnDownload) DOM.btnDownload.classList.add('hidden');
+    if (DOM.loadingState) {
+        DOM.loadingState.classList.remove('hidden');
+    }
+    if (DOM.videoPreview) {
+        DOM.videoPreview.classList.add('hidden');
+    }
+    if (DOM.formatSelector) {
+        DOM.formatSelector.classList.add('hidden');
+    }
+    if (DOM.btnDownload) {
+        DOM.btnDownload.classList.add('hidden');
+    }
 
     try {
         const response = await window.electronAPI.getVideoInfo(url);
-        if (DOM.loadingState) DOM.loadingState.classList.add('hidden');
+        if (DOM.loadingState) {
+            DOM.loadingState.classList.add('hidden');
+        }
 
         if (!response || !response.success || !response.info) {
             showToast('No se pudo obtener información del video', 'error');
@@ -412,22 +448,35 @@ async function fetchVideoInfo(url) {
         }
 
         const info = response.info;
-        if (DOM.previewThumb) DOM.previewThumb.src = info.thumbnail || '';
-        if (DOM.previewTitle) DOM.previewTitle.textContent = info.title || 'Sin título';
-        if (DOM.previewChannel)
+        if (DOM.previewThumb) {
+            DOM.previewThumb.src = info.thumbnail || '';
+        }
+        if (DOM.previewTitle) {
+            DOM.previewTitle.textContent = info.title || 'Sin título';
+        }
+        if (DOM.previewChannel) {
             DOM.previewChannel.textContent = info.uploader || 'Canal desconocido';
-        if (DOM.videoPreview) DOM.videoPreview.classList.remove('hidden');
+        }
+        if (DOM.videoPreview) {
+            DOM.videoPreview.classList.remove('hidden');
+        }
 
         State.currentVideoInfo = info;
         State.selectedQuality =
             info.availableQualities?.length > 0 ? Math.max(...info.availableQualities) : 1080;
 
-        if (DOM.formatSelector) DOM.formatSelector.classList.remove('hidden');
-        if (DOM.btnDownload) DOM.btnDownload.classList.remove('hidden');
+        if (DOM.formatSelector) {
+            DOM.formatSelector.classList.remove('hidden');
+        }
+        if (DOM.btnDownload) {
+            DOM.btnDownload.classList.remove('hidden');
+        }
         updateDownloadButtonText();
     } catch (e) {
         console.error('Fetch error:', e);
-        if (DOM.loadingState) DOM.loadingState.classList.add('hidden');
+        if (DOM.loadingState) {
+            DOM.loadingState.classList.add('hidden');
+        }
         showToast('Error al obtener información', 'error');
         State.activeUrl = null;
     } finally {
@@ -437,8 +486,12 @@ async function fetchVideoInfo(url) {
 
 function setFormat(format) {
     State.selectedFormat = format;
-    if (DOM.btnFormatMp3) DOM.btnFormatMp3.classList.toggle('active', format === 'mp3');
-    if (DOM.btnFormatMp4) DOM.btnFormatMp4.classList.toggle('active', format === 'mp4');
+    if (DOM.btnFormatMp3) {
+        DOM.btnFormatMp3.classList.toggle('active', format === 'mp3');
+    }
+    if (DOM.btnFormatMp4) {
+        DOM.btnFormatMp4.classList.toggle('active', format === 'mp4');
+    }
     updateDownloadButtonText();
 }
 
@@ -467,10 +520,18 @@ async function handleDownload() {
             showToast('Añadido a la cola de descargas', 'success');
             await window.electronAPI.startQueue();
 
-            if (DOM.urlInput) DOM.urlInput.value = '';
-            if (DOM.videoPreview) DOM.videoPreview.classList.add('hidden');
-            if (DOM.formatSelector) DOM.formatSelector.classList.add('hidden');
-            if (DOM.btnDownload) DOM.btnDownload.classList.add('hidden');
+            if (DOM.urlInput) {
+                DOM.urlInput.value = '';
+            }
+            if (DOM.videoPreview) {
+                DOM.videoPreview.classList.add('hidden');
+            }
+            if (DOM.formatSelector) {
+                DOM.formatSelector.classList.add('hidden');
+            }
+            if (DOM.btnDownload) {
+                DOM.btnDownload.classList.add('hidden');
+            }
             State.activeUrl = null;
 
             switchTab('downloads');
@@ -506,7 +567,9 @@ function updateFolderDisplay() {
 // Search Handlers (Buscador Avanzado)
 // =========================================
 async function handleSearch(query) {
-    if (!DOM.searchResults) return;
+    if (!DOM.searchResults) {
+        return;
+    }
 
     DOM.searchResults.innerHTML =
         '<p class="empty-message">Buscando resultados en alta fidelidad...</p>';
@@ -539,7 +602,9 @@ async function handleSearch(query) {
             item.addEventListener('click', () => {
                 const url = item.dataset.url;
                 if (url) {
-                    if (DOM.urlInput) DOM.urlInput.value = url;
+                    if (DOM.urlInput) {
+                        DOM.urlInput.value = url;
+                    }
                     switchTab('home');
                     fetchVideoInfo(url);
                 }
@@ -555,13 +620,21 @@ async function handleSearch(query) {
 // Spotify Handlers
 // =========================================
 async function handleLoadSpotifyPlaylist(url) {
-    if (DOM.spotifyLoading) DOM.spotifyLoading.classList.remove('hidden');
-    if (DOM.playlistPreview) DOM.playlistPreview.classList.add('hidden');
-    if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.add('hidden');
+    if (DOM.spotifyLoading) {
+        DOM.spotifyLoading.classList.remove('hidden');
+    }
+    if (DOM.playlistPreview) {
+        DOM.playlistPreview.classList.add('hidden');
+    }
+    if (DOM.btnDownloadPlaylist) {
+        DOM.btnDownloadPlaylist.classList.add('hidden');
+    }
 
     try {
         const response = await window.electronAPI.parseSpotifyPlaylist(url);
-        if (DOM.spotifyLoading) DOM.spotifyLoading.classList.add('hidden');
+        if (DOM.spotifyLoading) {
+            DOM.spotifyLoading.classList.add('hidden');
+        }
 
         if (!response || !response.success || !response.playlist) {
             showToast(response?.message || 'No se pudo cargar la playlist', 'error');
@@ -569,10 +642,15 @@ async function handleLoadSpotifyPlaylist(url) {
         }
 
         const playlist = response.playlist;
-        if (DOM.playlistCover) DOM.playlistCover.src = playlist.cover || '';
-        if (DOM.playlistName) DOM.playlistName.textContent = playlist.name || 'Playlist';
-        if (DOM.playlistCount)
+        if (DOM.playlistCover) {
+            DOM.playlistCover.src = playlist.cover || '';
+        }
+        if (DOM.playlistName) {
+            DOM.playlistName.textContent = playlist.name || 'Playlist';
+        }
+        if (DOM.playlistCount) {
             DOM.playlistCount.textContent = `${playlist.tracks?.length || 0} canciones`;
+        }
 
         if (DOM.trackList) {
             DOM.trackList.innerHTML = (playlist.tracks || [])
@@ -590,13 +668,19 @@ async function handleLoadSpotifyPlaylist(url) {
                 .join('');
         }
 
-        if (DOM.playlistPreview) DOM.playlistPreview.classList.remove('hidden');
-        if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.remove('hidden');
+        if (DOM.playlistPreview) {
+            DOM.playlistPreview.classList.remove('hidden');
+        }
+        if (DOM.btnDownloadPlaylist) {
+            DOM.btnDownloadPlaylist.classList.remove('hidden');
+        }
 
         State.currentSpotifyPlaylist = playlist;
     } catch (e) {
         console.error('Spotify error:', e);
-        if (DOM.spotifyLoading) DOM.spotifyLoading.classList.add('hidden');
+        if (DOM.spotifyLoading) {
+            DOM.spotifyLoading.classList.add('hidden');
+        }
         showToast('Error al cargar Spotify', 'error');
     }
 }
@@ -615,9 +699,15 @@ async function handleDownloadSpotifyPlaylist() {
             showToast(`¡Añadidas ${tracks.length} canciones a la cola!`, 'success');
             await window.electronAPI.startQueue();
 
-            if (DOM.spotifyInput) DOM.spotifyInput.value = '';
-            if (DOM.playlistPreview) DOM.playlistPreview.classList.add('hidden');
-            if (DOM.btnDownloadPlaylist) DOM.btnDownloadPlaylist.classList.add('hidden');
+            if (DOM.spotifyInput) {
+                DOM.spotifyInput.value = '';
+            }
+            if (DOM.playlistPreview) {
+                DOM.playlistPreview.classList.add('hidden');
+            }
+            if (DOM.btnDownloadPlaylist) {
+                DOM.btnDownloadPlaylist.classList.add('hidden');
+            }
 
             switchTab('downloads');
         } else {
@@ -633,7 +723,9 @@ async function handleDownloadSpotifyPlaylist() {
 // Queue UI Rendering
 // =========================================
 function updateDownloadsList() {
-    if (!DOM.downloadsList) return;
+    if (!DOM.downloadsList) {
+        return;
+    }
 
     if (!State.downloads || State.downloads.length === 0) {
         DOM.emptyDownloads?.classList.remove('hidden');
@@ -660,7 +752,6 @@ function createDownloadItemElement(item) {
     div.dataset.id = item.id;
 
     const isDownloading = item.status === 'downloading' || item.status === 'converting';
-    const isError = item.status === 'error';
     const isCompleted = item.status === 'completed';
 
     div.innerHTML = `
@@ -677,8 +768,8 @@ function createDownloadItemElement(item) {
         </div>
         <div class="download-actions">
             ${
-                isCompleted && item.filePath
-                    ? `
+    isCompleted && item.filePath
+        ? `
                 <button class="btn-ghost btn-open-file" title="Abrir archivo" data-path="${escapeHtml(item.filePath)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -687,8 +778,8 @@ function createDownloadItemElement(item) {
                     </svg>
                 </button>
             `
-                    : ''
-            }
+        : ''
+}
             <button class="btn-ghost btn-remove" title="Eliminar" data-id="${item.id}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -714,25 +805,27 @@ function createDownloadItemElement(item) {
 
 function getStatusText(status, progress, error) {
     switch (status) {
-        case 'pending':
-            return 'En espera...';
-        case 'searching':
-            return 'Buscando audio en YouTube...';
-        case 'downloading':
-            return `Descargando... ${progress || 0}%`;
-        case 'converting':
-            return `Convertiendo... ${progress || 0}%`;
-        case 'completed':
-            return '¡Completado!';
-        case 'error':
-            return `Error: ${error || 'Fallo en descarga'}`;
-        default:
-            return status;
+    case 'pending':
+        return 'En espera...';
+    case 'searching':
+        return 'Buscando audio en YouTube...';
+    case 'downloading':
+        return `Descargando... ${progress || 0}%`;
+    case 'converting':
+        return `Convertiendo... ${progress || 0}%`;
+    case 'completed':
+        return '¡Completado!';
+    case 'error':
+        return `Error: ${error || 'Fallo en descarga'}`;
+    default:
+        return status;
     }
 }
 
 function updateBadge() {
-    if (!DOM.downloadsBadge) return;
+    if (!DOM.downloadsBadge) {
+        return;
+    }
     const activeCount = State.downloads.filter(
         (i) => i.status === 'pending' || i.status === 'downloading' || i.status === 'converting'
     ).length;
@@ -745,12 +838,16 @@ function updateBadge() {
 // =========================================
 let toastTimeout;
 function showToast(message, type = 'info') {
-    if (!DOM.toast || !DOM.toastMessage) return;
+    if (!DOM.toast || !DOM.toastMessage) {
+        return;
+    }
 
     DOM.toastMessage.textContent = message;
     DOM.toast.className = `toast ${type} show`;
 
-    if (toastTimeout) clearTimeout(toastTimeout);
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+    }
     toastTimeout = setTimeout(() => {
         DOM.toast.classList.remove('show');
     }, 3000);
@@ -764,7 +861,9 @@ function isValidYouTubeUrl(url) {
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
+    if (!text) {
+        return '';
+    }
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;

@@ -1,0 +1,6 @@
+# Archivos generados
+src/renderer/js/bundle.js
+src/web/js/bundle.js
+
+# Proyecto Android generado por Capacitor
+android/

@@ -3,7 +3,9 @@ const logger = require('../utils/logger');
 
 class SpotifyService {
     isValidUrl(url) {
-        if (!url || typeof url !== 'string') return false;
+        if (!url || typeof url !== 'string') {
+            return false;
+        }
         return (
             /open\.spotify\.com\/(playlist|album|track)\/[a-zA-Z0-9]+/.test(url) ||
             /spotify\.link\/[a-zA-Z0-9]+/.test(url)
@@ -37,7 +39,7 @@ class SpotifyService {
 
             // 2. Tracks via Embed con timeout y fallback
             const embedUrl = `https://open.spotify.com/embed/${extracted.type}/${extracted.id}`;
-            const tracks = await this.parseEmbed(embedUrl, extracted.type);
+            const tracks = await this.parseEmbed(embedUrl);
 
             if (tracks.length === 0) {
                 throw new Error(
@@ -59,7 +61,7 @@ class SpotifyService {
         }
     }
 
-    async parseEmbed(embedUrl, type) {
+    async parseEmbed(embedUrl) {
         return new Promise((resolve) => {
             const tracks = [];
 
@@ -90,7 +92,7 @@ class SpotifyService {
                                 const entity = jsonData?.props?.pageProps?.state?.data?.entity;
 
                                 if (entity) {
-                                    let trackList =
+                                    const trackList =
                                         entity.trackList ||
                                         entity.tracks?.items ||
                                         entity.tracks ||

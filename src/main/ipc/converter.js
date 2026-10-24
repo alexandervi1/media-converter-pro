@@ -176,18 +176,18 @@ async function handleGetMetadata(event, { filePath }) {
                     format: format.format_name,
                     video: videoStream
                         ? {
-                              codec: videoStream.codec_name,
-                              width: videoStream.width,
-                              height: videoStream.height,
-                              fps: parseFrameRate(videoStream.r_frame_rate)
-                          }
+                            codec: videoStream.codec_name,
+                            width: videoStream.width,
+                            height: videoStream.height,
+                            fps: parseFrameRate(videoStream.r_frame_rate)
+                        }
                         : null,
                     audio: audioStream
                         ? {
-                              codec: audioStream.codec_name,
-                              channels: audioStream.channels,
-                              sampleRate: audioStream.sample_rate
-                          }
+                            codec: audioStream.codec_name,
+                            channels: audioStream.channels,
+                            sampleRate: audioStream.sample_rate
+                        }
                         : null
                 }
             });
@@ -202,7 +202,9 @@ async function handleGetMetadata(event, { filePath }) {
  * @returns {number} Frame rate decimal
  */
 function parseFrameRate(frameRate) {
-    if (!frameRate) return 0;
+    if (!frameRate) {
+        return 0;
+    }
 
     // Si es un número directo
     if (!frameRate.includes('/')) {
@@ -211,7 +213,9 @@ function parseFrameRate(frameRate) {
 
     // Formato "numerator/denominator"
     const [num, den] = frameRate.split('/').map(Number);
-    if (den === 0 || isNaN(num) || isNaN(den)) return 0;
+    if (den === 0 || isNaN(num) || isNaN(den)) {
+        return 0;
+    }
 
     return Math.round((num / den) * 100) / 100;
 }

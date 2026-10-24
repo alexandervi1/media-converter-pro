@@ -6,7 +6,7 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const https = require('https');
 const logger = require('../utils/logger');
-const { sanitizeFileName, parseCleanMetadata } = require('../utils/validators');
+const { parseCleanMetadata } = require('../utils/validators');
 
 /**
  * DownloadService
@@ -33,7 +33,9 @@ class DownloadService {
     }
 
     _registerProcess(id, proc) {
-        if (!id) return;
+        if (!id) {
+            return;
+        }
         if (!this.activeProcesses.has(id)) {
             this.activeProcesses.set(id, new Set());
         }
@@ -41,7 +43,9 @@ class DownloadService {
     }
 
     _unregisterProcess(id, proc) {
-        if (!id || !this.activeProcesses.has(id)) return;
+        if (!id || !this.activeProcesses.has(id)) {
+            return;
+        }
         const set = this.activeProcesses.get(id);
         set.delete(proc);
         if (set.size === 0) {
@@ -50,7 +54,9 @@ class DownloadService {
     }
 
     cancelDownload(id) {
-        if (!id || !this.activeProcesses.has(id)) return false;
+        if (!id || !this.activeProcesses.has(id)) {
+            return false;
+        }
         const set = this.activeProcesses.get(id);
         for (const proc of set) {
             try {
@@ -65,11 +71,13 @@ class DownloadService {
     }
 
     cancelAll() {
-        for (const [id, set] of this.activeProcesses.entries()) {
+        for (const set of this.activeProcesses.values()) {
             for (const proc of set) {
                 try {
                     proc.kill('SIGKILL');
-                } catch (e) {}
+                } catch (e) {
+                    /* el proceso ya pudo haber terminado */
+                }
             }
         }
         this.activeProcesses.clear();
@@ -137,7 +145,9 @@ class DownloadService {
     }
 
     async getVideoInfo(url) {
-        if (!fs.existsSync(this.ytDlpPath)) return null;
+        if (!fs.existsSync(this.ytDlpPath)) {
+            return null;
+        }
 
         return new Promise((resolve) => {
             const args = [
@@ -190,7 +200,9 @@ class DownloadService {
     }
 
     _normalizeInfo(info) {
-        if (!info) return null;
+        if (!info) {
+            return null;
+        }
         let thumbnailUrl = info.thumbnail;
         if (!thumbnailUrl && info.thumbnails?.length > 0) {
             const sorted = [...info.thumbnails].sort((a, b) => (b.width || 0) - (a.width || 0));
@@ -212,7 +224,9 @@ class DownloadService {
             });
             availableQualities = standardQualities.filter((q) => {
                 for (const h of heights) {
-                    if (Math.abs(h - q) <= 20) return true;
+                    if (Math.abs(h - q) <= 20) {
+                        return true;
+                    }
                 }
                 return false;
             });
@@ -224,7 +238,7 @@ class DownloadService {
             duration: info.duration,
             thumbnail: thumbnailUrl,
             uploader: info.uploader || info.channel,
-            availableQualities: availableQualities
+            availableQualities
         };
     }
 
@@ -254,7 +268,9 @@ class DownloadService {
             ];
 
             const ytdlp = spawn(this.ytDlpPath, args, { windowsHide: true });
-            if (taskId) this._registerProcess(taskId, ytdlp);
+            if (taskId) {
+                this._registerProcess(taskId, ytdlp);
+            }
             let stderr = '';
 
             ytdlp.stdout.on('data', (data) => {
@@ -262,20 +278,29 @@ class DownloadService {
                 const percentMatch = output.match(/(\d+\.?\d*)%/);
                 if (percentMatch) {
                     const percent = parseFloat(percentMatch[1]);
-                    if (!isNaN(percent)) onProgress(percent);
+                    if (!isNaN(percent)) {
+                        onProgress(percent);
+                    }
                 }
             });
 
             ytdlp.stderr.on('data', (d) => (stderr += d.toString()));
 
             ytdlp.on('close', (code) => {
-                if (taskId) this._unregisterProcess(taskId, ytdlp);
-                if (code === 0) resolve();
-                else reject(new Error(`yt-dlp error code ${code}: ${stderr.slice(0, 100)}`));
+                if (taskId) {
+                    this._unregisterProcess(taskId, ytdlp);
+                }
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`yt-dlp error code ${code}: ${stderr.slice(0, 100)}`));
+                }
             });
 
             ytdlp.on('error', (err) => {
-                if (taskId) this._unregisterProcess(taskId, ytdlp);
+                if (taskId) {
+                    this._unregisterProcess(taskId, ytdlp);
+                }
                 reject(err);
             });
         });
@@ -293,8 +318,8 @@ class DownloadService {
                         ? `bestvideo[height<=${resolvedQuality}]+bestaudio/best`
                         : 'bestvideo+bestaudio/best'
                     : resolvedQuality
-                      ? `bestvideo[height<=${resolvedQuality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${resolvedQuality}][ext=mp4]/best`
-                      : 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+                        ? `bestvideo[height<=${resolvedQuality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${resolvedQuality}][ext=mp4]/best`
+                        : 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
 
             const args = [
                 url,
@@ -318,7 +343,9 @@ class DownloadService {
             ];
 
             const ytdlp = spawn(this.ytDlpPath, args, { windowsHide: true });
-            if (taskId) this._registerProcess(taskId, ytdlp);
+            if (taskId) {
+                this._registerProcess(taskId, ytdlp);
+            }
             let stderr = '';
 
             ytdlp.stdout.on('data', (data) => {
@@ -326,16 +353,21 @@ class DownloadService {
                 const percentMatch = output.match(/(\d+\.?\d*)%/);
                 if (percentMatch) {
                     const percent = parseFloat(percentMatch[1]);
-                    if (!isNaN(percent)) onProgress(percent);
+                    if (!isNaN(percent)) {
+                        onProgress(percent);
+                    }
                 }
             });
 
             ytdlp.stderr.on('data', (d) => (stderr += d.toString()));
 
             ytdlp.on('close', (code) => {
-                if (taskId) this._unregisterProcess(taskId, ytdlp);
-                if (code === 0) resolve();
-                else {
+                if (taskId) {
+                    this._unregisterProcess(taskId, ytdlp);
+                }
+                if (code === 0) {
+                    resolve();
+                } else {
                     const message =
                         this._parseError(stderr) ||
                         stderr.slice(0, 300).trim() ||
@@ -345,7 +377,9 @@ class DownloadService {
             });
 
             ytdlp.on('error', (err) => {
-                if (taskId) this._unregisterProcess(taskId, ytdlp);
+                if (taskId) {
+                    this._unregisterProcess(taskId, ytdlp);
+                }
                 reject(err);
             });
         });
@@ -418,7 +452,9 @@ class DownloadService {
     }
 
     downloadThumbnail(url, outputPath) {
-        if (!url) return Promise.resolve(null);
+        if (!url) {
+            return Promise.resolve(null);
+        }
 
         return new Promise((resolve, reject) => {
             const file = fs.createWriteStream(outputPath);
@@ -487,13 +523,13 @@ class DownloadService {
                 '-id3v2_version',
                 '3',
                 '-metadata',
-                `title=${(metadata.title || 'Downloaded Track').replace(/"/g, '\"')}`,
+                `title=${metadata.title || 'Downloaded Track'}`,
                 '-metadata',
-                `artist=${(metadata.artist || 'Unknown Artist').replace(/"/g, '\"')}`,
+                `artist=${metadata.artist || 'Unknown Artist'}`,
                 '-metadata',
-                `album=${(metadata.album || 'Media Converter Pro').replace(/"/g, '\"')}`,
+                `album=${metadata.album || 'Media Converter Pro'}`,
                 '-metadata',
-                `comment=${(metadata.comment || '').replace(/"/g, '\"')}`
+                `comment=${metadata.comment || ''}`
             );
 
             command
@@ -598,8 +634,12 @@ class DownloadService {
                                 uploaderB.includes('topic') ||
                                 titleB.includes('official audio');
 
-                            if (isOfficialA && !isOfficialB) return -1;
-                            if (!isOfficialA && isOfficialB) return 1;
+                            if (isOfficialA && !isOfficialB) {
+                                return -1;
+                            }
+                            if (!isOfficialA && isOfficialB) {
+                                return 1;
+                            }
                             return 0;
                         });
 
@@ -638,14 +678,21 @@ class DownloadService {
 
     _parseError(stderr) {
         const text = stderr || '';
-        if (text.includes('Video unavailable')) return 'El video no está disponible';
-        if (text.includes('Private video')) return 'El video es privado';
-        if (text.includes('Sign in to confirm your age'))
+        if (text.includes('Video unavailable')) {
+            return 'El video no está disponible';
+        }
+        if (text.includes('Private video')) {
+            return 'El video es privado';
+        }
+        if (text.includes('Sign in to confirm your age')) {
             return 'Este video requiere autenticación o edad confirmada';
-        if (text.includes('Requested formats are incompatible'))
+        }
+        if (text.includes('Requested formats are incompatible')) {
             return 'No se pudo combinar el video y el audio para este formato';
-        if (text.includes('No video formats found'))
+        }
+        if (text.includes('No video formats found')) {
             return 'No se encontraron formatos de video compatibles';
+        }
         return null;
     }
 }
