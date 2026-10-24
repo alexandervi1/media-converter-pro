@@ -2,7 +2,7 @@
   "name": "media-converter-pro",
   "version": "2.1.0",
   "description": "Aplicación de escritorio premium para descargar videos de YouTube y convertir archivos multimedia. Soporta MP3, MP4, WAV y más formatos.",
-  "main": "src/main/index.js",
+  "main": "src/desktop/main.js",
   "author": {
     "name": "Media Converter Team"
   },
@@ -25,7 +25,8 @@
   "scripts": {
     "start": "bun run bundle:renderer && electron .",
     "dev": "bun run bundle:renderer && cross-env NODE_ENV=development electron .",
-    "bundle:renderer": "esbuild src/renderer/js/app.js --bundle --outfile=src/renderer/js/bundle.js --format=iife --platform=browser",
+    "server": "bun run bundle:renderer && node src/server/standalone.js",
+    "bundle:renderer": "esbuild src/web/js/app.js --bundle --outfile=src/web/js/bundle.js --format=iife --platform=browser",
     "build": "bun run bundle:renderer && electron-builder",
     "build:win": "bun run bundle:renderer && electron-builder --win",
     "build:mac": "bun run bundle:renderer && electron-builder --mac",

@@ -5,6 +5,8 @@
 
 'use strict';
 
+const Api = require('./api.js');
+
 // =========================================
 // DOM References (initialized after DOM ready)
 // =========================================
@@ -24,7 +26,9 @@ const State = {
     isFetchingInfo: false,
     activeUrl: null,
     searchFilter: 'all',
-    currentTheme: 'dark'
+    currentTheme: 'dark',
+    embedded: true,
+    capabilities: {}
 };
 
 let urlDebounceTimeout = null;
@@ -45,6 +49,18 @@ function init() {
         btnMinimize: $('btn-minimize'),
         btnClose: $('btn-close'),
         selectCookies: $('select-cookies'),
+
+        // Conexión / servidor
+        connectOverlay: $('connect-overlay'),
+        connectUrl: $('connect-url'),
+        connectToken: $('connect-token'),
+        btnConnect: $('btn-connect'),
+        connectError: $('connect-error'),
+        lanToggle: $('lan-toggle'),
+        lanInfo: $('lan-info'),
+        serverInfoMobile: $('server-info-mobile'),
+        btnChangeServer: $('btn-change-server'),
+        connDot: $('conn-dot'),
 
         // Tabs
         tabHome: $('tab-home'),
@@ -116,7 +132,20 @@ async function loadInitialData() {
         const savedTheme = localStorage.getItem('mcp_theme') || 'dark';
         applyTheme(savedTheme);
 
-        const settings = await window.electronAPI.getSettings();
+        // Transporte: escritorio embebido o servidor remoto configurado
+        const { embedded, configured } = await Api.init();
+        State.embedded = embedded;
+
+        if (!configured) {
+            showConnectScreen();
+            return;
+        }
+
+        const health = Api.getConnection().health || {};
+        State.capabilities = health.capabilities || {};
+        applyCapabilities();
+
+        const settings = await Api.getSettings();
         if (settings?.downloadFolder) {
             State.downloadFolder = settings.downloadFolder;
             updateFolderDisplay();
@@ -125,7 +154,7 @@ async function loadInitialData() {
             DOM.selectCookies.value = settings.ytdlpCookies;
         }
 
-        const queueData = await window.electronAPI.getQueue();
+        const queueData = await Api.getQueue();
         if (queueData) {
             State.downloads = queueData.queue || [];
             updateDownloadsList();
@@ -135,8 +164,142 @@ async function loadInitialData() {
                 updateFolderDisplay();
             }
         }
+
+        setupServerSection();
     } catch (e) {
         console.error('[App] Error loading initial data:', e);
+        showToast('No se pudo conectar con el servidor', 'error');
+    }
+}
+
+/**
+ * Oculta/muestra controles según capacidades del servidor:
+ * el diálogo de carpeta y el explorador solo existen en escritorio.
+ */
+function applyCapabilities() {
+    const { folderDialog, desktopShell } = State.capabilities;
+    if (DOM.btnFolder && !folderDialog) {
+        DOM.btnFolder.classList.add('hidden');
+    }
+    if (DOM.btnOpenFolder && !desktopShell) {
+        DOM.btnOpenFolder.classList.add('hidden');
+    }
+}
+
+// =========================================
+// Pantalla de conexión (móvil / navegador)
+// =========================================
+function showConnectScreen() {
+    if (!DOM.connectOverlay) {
+        return;
+    }
+    const conn = Api.getConnection();
+    if (DOM.connectUrl && !DOM.connectUrl.value && conn.baseUrl) {
+        DOM.connectUrl.value = conn.baseUrl.replace(/^https?:\/\//, '');
+    }
+    DOM.connectOverlay.classList.remove('hidden');
+}
+
+async function handleConnect() {
+    if (DOM.connectError) {
+        DOM.connectError.textContent = '';
+    }
+    const rawUrl = DOM.connectUrl?.value.trim() || '';
+    const pairingToken = DOM.connectToken?.value.trim() || '';
+
+    if (DOM.btnConnect) {
+        DOM.btnConnect.disabled = true;
+        DOM.btnConnect.textContent = 'Conectando...';
+    }
+
+    try {
+        await Api.configure(rawUrl, pairingToken);
+        location.reload();
+    } catch (e) {
+        if (DOM.connectError) {
+            DOM.connectError.textContent =
+                e.code === 'UNAUTHORIZED'
+                    ? 'Token incorrecto para este servidor'
+                    : 'No se pudo conectar. Verifica que la PC tenga la app abierta y el servidor habilitado en tu red.';
+        }
+        if (DOM.btnConnect) {
+            DOM.btnConnect.disabled = false;
+            DOM.btnConnect.textContent = 'Conectar';
+        }
+    }
+}
+
+// =========================================
+// Sección Servidor del drawer
+// =========================================
+function setupServerSection() {
+    if (State.embedded && window.electronAPI?.getLanInfo) {
+        // Escritorio: toggle LAN + info de emparejamiento
+        if (DOM.serverInfoMobile) {
+            DOM.serverInfoMobile.classList.add('hidden');
+        }
+        window.electronAPI
+            .getLanInfo()
+            .then((info) => renderLanInfo(info))
+            .catch(() => {});
+        if (DOM.lanToggle && !DOM.lanToggle.dataset.bound) {
+            DOM.lanToggle.dataset.bound = '1';
+            DOM.lanToggle.addEventListener('change', async () => {
+                DOM.lanToggle.disabled = true;
+                try {
+                    const info = await window.electronAPI.setLanEnabled(
+                        DOM.lanToggle.checked
+                    );
+                    renderLanInfo(info);
+                    showToast(
+                        DOM.lanToggle.checked
+                            ? 'Servidor accesible desde tu red WiFi'
+                            : 'Servidor limitado a esta PC',
+                        'success'
+                    );
+                } catch (e) {
+                    showToast('No se pudo cambiar el modo del servidor', 'error');
+                    DOM.lanToggle.checked = !DOM.lanToggle.checked;
+                } finally {
+                    DOM.lanToggle.disabled = false;
+                }
+            });
+        }
+    } else {
+        // Móvil: mostrar servidor actual + cambiar
+        if (DOM.lanToggle?.parentElement) {
+            DOM.lanToggle.parentElement.classList.add('hidden');
+        }
+        if (DOM.serverInfoMobile) {
+            const conn = Api.getConnection();
+            DOM.serverInfoMobile.textContent = conn.baseUrl || 'Servidor no configurado';
+        }
+        if (DOM.btnChangeServer && !DOM.btnChangeServer.dataset.bound) {
+            DOM.btnChangeServer.dataset.bound = '1';
+            DOM.btnChangeServer.addEventListener('click', () => {
+                Api.forgetConfiguration();
+                location.reload();
+            });
+        }
+    }
+}
+
+function renderLanInfo(info) {
+    if (DOM.lanToggle) {
+        DOM.lanToggle.checked = !!info.enabled;
+    }
+    if (DOM.lanInfo) {
+        if (info.enabled) {
+            const urls = (info.urls || []).join('\n');
+            DOM.lanInfo.innerHTML = `
+                <p class="lan-line">Conecta desde el teléfono:</p>
+                <code class="lan-url">${escapeHtml(urls)}</code>
+                <p class="lan-line">Token: <strong>${escapeHtml(info.token || '')}</strong></p>
+            `;
+        } else {
+            DOM.lanInfo.innerHTML =
+                '<p class="lan-line">Activa el interruptor para controlar la app desde tu teléfono (misma red WiFi).</p>';
+        }
     }
 }
 
@@ -198,13 +361,33 @@ function setupEventListeners() {
         });
     });
 
-    // Window controls
-    if (DOM.btnMinimize) {
+    // Window controls (solo escritorio)
+    if (DOM.btnMinimize && window.electronAPI?.minimizeWindow) {
         DOM.btnMinimize.addEventListener('click', () => window.electronAPI.minimizeWindow());
     }
-    if (DOM.btnClose) {
+    if (DOM.btnClose && window.electronAPI?.closeWindow) {
         DOM.btnClose.addEventListener('click', () => window.electronAPI.closeWindow());
     }
+
+    // Pantalla de conexión (móvil / navegador)
+    if (DOM.btnConnect) {
+        DOM.btnConnect.addEventListener('click', () => handleConnect());
+    }
+    if (DOM.connectToken) {
+        DOM.connectToken.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleConnect();
+            }
+        });
+    }
+
+    // Indicador de conexión con el servidor
+    Api.onConnectionChange((online) => {
+        if (DOM.connDot) {
+            DOM.connDot.classList.toggle('online', online);
+            DOM.connDot.title = online ? 'Conectado al servidor' : 'Sin conexión con el servidor';
+        }
+    });
 
     // Tab navigation
     if (DOM.tabHome) {
@@ -327,7 +510,7 @@ function setupEventListeners() {
         DOM.selectCookies.addEventListener('change', async () => {
             const value = DOM.selectCookies.value;
             try {
-                const res = await window.electronAPI.saveSettings({ ytdlpCookies: value });
+                const res = await Api.saveSettings({ ytdlpCookies: value });
                 if (res.success) {
                     showToast(
                         value === 'none'
@@ -346,21 +529,21 @@ function setupEventListeners() {
     if (DOM.btnOpenFolder) {
         DOM.btnOpenFolder.addEventListener('click', () => {
             if (State.downloadFolder) {
-                window.electronAPI.openFolder(State.downloadFolder);
+                Api.openPath(State.downloadFolder);
             }
         });
     }
 
     if (DOM.btnClear) {
         DOM.btnClear.addEventListener('click', async () => {
-            await window.electronAPI.clearQueue();
+            await Api.clearQueue();
             showToast('Cola limpiada', 'info');
         });
     }
 
     if (DOM.btnCache) {
         DOM.btnCache.addEventListener('click', async () => {
-            const res = await window.electronAPI.clearCache();
+            const res = await Api.clearCache();
             if (res.success) {
                 showToast('Caché limpiado correctamente', 'success');
             }
@@ -404,7 +587,7 @@ function switchTab(tabName) {
 // Queue Listener Setup
 // =========================================
 function setupQueueListeners() {
-    window.electronAPI.onQueueUpdate(({ queue, downloadFolder }) => {
+    Api.onQueueUpdate(({ queue, downloadFolder }) => {
         State.downloads = queue || [];
         if (downloadFolder) {
             State.downloadFolder = downloadFolder;
@@ -414,7 +597,7 @@ function setupQueueListeners() {
         updateBadge();
     });
 
-    window.electronAPI.onQueueComplete(() => {
+    Api.onQueueComplete(() => {
         showToast('¡Todas las descargas han finalizado!', 'success');
     });
 }
@@ -424,7 +607,12 @@ function setupQueueListeners() {
 // =========================================
 async function handlePaste() {
     try {
-        const text = window.electronAPI.readClipboard();
+        let text = '';
+        if (navigator.clipboard?.readText) {
+            text = await navigator.clipboard.readText();
+        } else if (window.electronAPI?.readClipboard) {
+            text = window.electronAPI.readClipboard();
+        }
         if (text && DOM.urlInput) {
             DOM.urlInput.value = text.trim();
             if (isValidYouTubeUrl(text.trim())) {
@@ -460,7 +648,7 @@ async function fetchVideoInfo(url) {
     }
 
     try {
-        const response = await window.electronAPI.getVideoInfo(url);
+        const response = await Api.getVideoInfo(url);
         if (DOM.loadingState) {
             DOM.loadingState.classList.add('hidden');
         }
@@ -533,16 +721,16 @@ async function handleDownload() {
     }
 
     try {
-        const result = await window.electronAPI.addToQueue(
-            State.activeUrl,
-            State.selectedFormat,
-            State.selectedQuality,
-            { embedMetadata: true }
-        );
+        const result = await Api.addToQueue({
+            url: State.activeUrl,
+            format: State.selectedFormat,
+            quality: State.selectedQuality,
+            options: { embedMetadata: true }
+        });
 
         if (result.success) {
             showToast('Añadido a la cola de descargas', 'success');
-            await window.electronAPI.startQueue();
+            await Api.startQueue();
 
             if (DOM.urlInput) {
                 DOM.urlInput.value = '';
@@ -570,7 +758,7 @@ async function handleDownload() {
 
 async function handleSelectFolder() {
     try {
-        const result = await window.electronAPI.setDownloadFolder();
+        const result = await Api.selectFolder();
         if (result.success && result.folder) {
             State.downloadFolder = result.folder;
             updateFolderDisplay();
@@ -599,7 +787,7 @@ async function handleSearch(query) {
         '<p class="empty-message">Buscando resultados en alta fidelidad...</p>';
 
     try {
-        const response = await window.electronAPI.searchYouTube(query, 15, State.searchFilter);
+        const response = await Api.search(query, 15, State.searchFilter);
         const results = response?.results || [];
 
         if (!results || results.length === 0) {
@@ -655,7 +843,7 @@ async function handleLoadSpotifyPlaylist(url) {
     }
 
     try {
-        const response = await window.electronAPI.parseSpotifyPlaylist(url);
+        const response = await Api.parseSpotifyPlaylist(url);
         if (DOM.spotifyLoading) {
             DOM.spotifyLoading.classList.add('hidden');
         }
@@ -717,11 +905,11 @@ async function handleDownloadSpotifyPlaylist() {
 
     try {
         const tracks = State.currentSpotifyPlaylist.tracks;
-        const result = await window.electronAPI.downloadSpotifyPlaylist(tracks, 'mp3');
+        const result = await Api.addSpotifyTracks(tracks, 'mp3');
 
         if (result.success) {
             showToast(`¡Añadidas ${tracks.length} canciones a la cola!`, 'success');
-            await window.electronAPI.startQueue();
+            await Api.startQueue();
 
             if (DOM.spotifyInput) {
                 DOM.spotifyInput.value = '';
@@ -818,7 +1006,7 @@ function createDownloadItemElement(item) {
         </div>
         <div class="download-actions">
             ${
-    isCompleted && item.filePath
+    isCompleted && item.filePath && State.capabilities.desktopShell
         ? `
                 <button class="btn-ghost btn-open-file" title="Abrir archivo" data-path="${escapeHtml(item.filePath)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -840,13 +1028,13 @@ function createDownloadItemElement(item) {
     `;
 
     div.querySelector('.btn-remove')?.addEventListener('click', async () => {
-        await window.electronAPI.removeFromQueue(item.id);
+        await Api.removeFromQueue(item.id);
     });
 
     div.querySelector('.btn-open-file')?.addEventListener('click', (e) => {
         const filePath = e.currentTarget.dataset.path;
         if (filePath) {
-            window.electronAPI.openFolder(filePath);
+            Api.openPath(filePath);
         }
     });
 

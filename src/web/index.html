@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:"
+            content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:; connect-src 'self' http: https:"
         />
         <title>Media Converter Pro</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -49,6 +49,7 @@
                 </div>
 
                 <div class="titlebar-controls">
+                    <span class="conn-dot online" id="conn-dot" title="Conectado al servidor"></span>
                     <button
                         class="titlebar-btn"
                         id="btn-settings-gear"
@@ -432,6 +433,27 @@
                     </section>
 
                     <section class="drawer-section">
+                        <h4 class="theme-title">Servidor</h4>
+                        <div class="lan-toggle-row">
+                            <label class="drawer-hint" for="lan-toggle">
+                                Acceso desde el teléfono (misma red WiFi)
+                            </label>
+                            <label class="switch">
+                                <input type="checkbox" id="lan-toggle" />
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="lan-info" id="lan-info"></div>
+                        <div class="server-mobile hidden" id="server-mobile-block">
+                            <p class="drawer-hint">Servidor conectado:</p>
+                            <code class="lan-url" id="server-info-mobile"></code>
+                            <button class="btn-secondary btn-full" id="btn-change-server">
+                                Cambiar servidor
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="drawer-section">
                         <h4 class="theme-title">Conexión</h4>
                         <label class="drawer-hint" for="select-cookies">
                             Si YouTube pide verificación anti-bot, usa las cookies de un
@@ -471,6 +493,44 @@
             <!-- Toast Notifications -->
             <div class="toast hidden" id="toast">
                 <p class="toast-message" id="toast-message"></p>
+            </div>
+
+            <!-- Overlay de conexión (móvil / navegador sin servidor configurado) -->
+            <div class="connect-overlay hidden" id="connect-overlay">
+                <div class="connect-card">
+                    <div class="connect-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
+                        </svg>
+                        <h2>Conectar al servidor</h2>
+                    </div>
+                    <p class="drawer-hint">
+                        En la PC, abre Media Converter Pro, entra al menú y activa
+                        "Acceso desde el teléfono". Introduce la dirección y el token
+                        que muestra la app de escritorio.
+                    </p>
+                    <label class="connect-label" for="connect-url">Dirección del servidor</label>
+                    <input
+                        type="text"
+                        class="connect-input"
+                        id="connect-url"
+                        placeholder="192.168.1.50:45690"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <label class="connect-label" for="connect-token">Token de emparejamiento</label>
+                    <input
+                        type="text"
+                        class="connect-input"
+                        id="connect-token"
+                        placeholder="ab12cd34"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <button class="btn-primary btn-full" id="btn-connect">Conectar</button>
+                    <p class="connect-error" id="connect-error"></p>
+                </div>
             </div>
         </div>
 

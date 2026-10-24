@@ -5,7 +5,7 @@
  * @module utils/validators
  */
 
-const { YOUTUBE_URL_PATTERNS } = require('../../config/constants');
+const { YOUTUBE_URL_PATTERNS } = require('../constants');
 
 /**
  * Verifica si una URL es válida de YouTube

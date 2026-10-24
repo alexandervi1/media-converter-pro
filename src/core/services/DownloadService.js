@@ -1,6 +1,5 @@
 'use strict';
 
-const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -12,21 +11,26 @@ const { parseCleanMetadata } = require('../utils/validators');
  * DownloadService
  * Encapsula la lógica compleja de yt-dlp y ffmpeg.
  * Gestiona el ciclo de vida de los subprocesos de conversión/descarga.
+ * Agnóstico del runtime: recibe sus rutas por constructor (sin Electron).
  */
 class DownloadService {
-    constructor() {
-        this.ffmpegPath = app.isPackaged
-            ? path.join(process.resourcesPath, 'ffmpeg.exe')
-            : require('ffmpeg-static');
+    /**
+     * @param {Object} options
+     * @param {string} options.ffmpegPath  Ruta absoluta al binario de ffmpeg
+     * @param {string} options.binDir      Directorio donde vive/descarga yt-dlp
+     * @param {string} options.tempDir     Directorio de archivos temporales
+     */
+    constructor({ ffmpegPath, binDir, tempDir }) {
+        this.ffmpegPath = ffmpegPath;
 
         process.env.FFMPEG_PATH = this.ffmpegPath;
 
-        this.ytDlpDir = path.join(app.getPath('userData'), 'bin');
+        this.ytDlpDir = binDir;
         this.ytDlpPath = path.join(
             this.ytDlpDir,
             process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
         );
-        this.tempDir = path.join(app.getPath('userData'), 'temp');
+        this.tempDir = tempDir;
         fs.mkdirSync(this.tempDir, { recursive: true });
 
         this.activeProcesses = new Map();
@@ -811,4 +815,4 @@ class DownloadService {
     }
 }
 
-module.exports = new DownloadService();
+module.exports = DownloadService;
