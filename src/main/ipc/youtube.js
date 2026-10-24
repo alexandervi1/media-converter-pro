@@ -34,6 +34,9 @@ function registerYouTubeHandlers() {
     ipcMain.handle('settings:save', handleSaveSettings);
     ipcMain.handle('settings:get', () => config);
 
+    if (config.ytdlpCookies) {
+        DownloadService.setCookiesBrowser(config.ytdlpCookies);
+    }
     DownloadService.initialize();
 
     logger.info('Handlers de YouTube registrados (Architecture: Controller-Service)');
@@ -65,6 +68,9 @@ async function handleSaveSettings(event, newSettings) {
         config = updated;
         if (updated.downloadFolder) {
             downloadFolder = updated.downloadFolder;
+        }
+        if (updated.ytdlpCookies !== undefined) {
+            DownloadService.setCookiesBrowser(updated.ytdlpCookies);
         }
         return { success: true };
     }
@@ -273,10 +279,11 @@ async function processSingleItem(item) {
                 item.id
             );
         } else {
-            const tempWebmPath = path.join(tempDir, `${videoId}.webm`);
-            await DownloadService.downloadBestAudio(
+            // yt-dlp decide la extensión real (webm/m4a); recibimos la ruta final
+            const downloadedAudioPath = await DownloadService.downloadBestAudio(
                 item.url,
-                tempWebmPath,
+                tempDir,
+                `${item.id}_${videoId}`,
                 (pct) => {
                     const finalPct = Math.min(Math.round(pct * 0.75), 75);
                     QueueService.updateItem(item.id, { progress: finalPct });
@@ -296,13 +303,13 @@ async function processSingleItem(item) {
             };
 
             if (item.format === 'm4a' || item.format === 'aac') {
-                await DownloadService.convertToAAC(tempWebmPath, tempFilePath, conversionProgress);
+                await DownloadService.convertToAAC(downloadedAudioPath, tempFilePath, conversionProgress);
             } else {
-                await DownloadService.convertToMp3(tempWebmPath, tempFilePath, conversionProgress);
+                await DownloadService.convertToMp3(downloadedAudioPath, tempFilePath, conversionProgress);
             }
 
             try {
-                fs.unlinkSync(tempWebmPath);
+                fs.unlinkSync(downloadedAudioPath);
             } catch (e) {
                 /* el temporal ya pudo haber sido limpiado */
             }
@@ -438,7 +445,31 @@ async function processSingleItem(item) {
     sendQueueUpdate();
 }
 
+const QUEUE_UPDATE_INTERVAL_MS = 250;
+let queueUpdateTimer = null;
+let queueUpdatePending = false;
+
+/**
+ * Envío throttled del estado de la cola: emite como máximo 1 mensaje cada
+ * 250ms (leading + trailing). Los ticks de progreso de yt-dlp llegan varias
+ * veces por segundo y saturaban el IPC y el render de la UI.
+ */
 function sendQueueUpdate() {
+    if (queueUpdateTimer) {
+        queueUpdatePending = true;
+        return;
+    }
+    doSendQueueUpdate();
+    queueUpdateTimer = setTimeout(() => {
+        queueUpdateTimer = null;
+        if (queueUpdatePending) {
+            queueUpdatePending = false;
+            sendQueueUpdate();
+        }
+    }, QUEUE_UPDATE_INTERVAL_MS);
+}
+
+function doSendQueueUpdate() {
     const mainWindow = getMainWindow();
     if (mainWindow) {
         mainWindow.webContents.send('youtube:queue-update', {

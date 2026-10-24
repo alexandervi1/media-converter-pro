@@ -30,6 +30,23 @@ class DownloadService {
         fs.mkdirSync(this.tempDir, { recursive: true });
 
         this.activeProcesses = new Map();
+
+        // Opcional: usar cookies de un navegador local para sortear el
+        // bot-check de YouTube ("Sign in to confirm you're not a bot")
+        this.cookiesBrowser = null;
+    }
+
+    setCookiesBrowser(browserName) {
+        this.cookiesBrowser = browserName && browserName !== 'none' ? browserName : null;
+        logger.info(
+            this.cookiesBrowser
+                ? `yt-dlp usará cookies de: ${this.cookiesBrowser}`
+                : 'yt-dlp sin cookies de navegador'
+        );
+    }
+
+    _cookieArgs() {
+        return this.cookiesBrowser ? ['--cookies-from-browser', this.cookiesBrowser] : [];
     }
 
     _registerProcess(id, proc) {
@@ -87,11 +104,48 @@ class DownloadService {
     async initialize() {
         try {
             await this.ensureYtDlpExists();
+            this.checkForYtDlpUpdate();
             return true;
         } catch (error) {
             logger.error('Fallo al inicializar DownloadService:', error);
             return false;
         }
+    }
+
+    /**
+     * YouTube rompe yt-dlp cada pocas semanas: lo actualizamos en background
+     * como máximo una vez cada 7 días (best-effort, no bloquea el arranque).
+     */
+    checkForYtDlpUpdate() {
+        const markerPath = path.join(this.ytDlpDir, '.last_update');
+        const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+        try {
+            const last = parseInt(fs.readFileSync(markerPath, 'utf-8'), 10) || 0;
+            if (Date.now() - last < WEEK_MS) {
+                return;
+            }
+            fs.writeFileSync(markerPath, String(Date.now()));
+        } catch (e) {
+            try {
+                fs.writeFileSync(markerPath, String(Date.now()));
+            } catch (e2) {
+                return;
+            }
+        }
+
+        logger.info('Buscando actualización de yt-dlp...');
+        const updater = spawn(this.ytDlpPath, ['-U'], { windowsHide: true });
+        let output = '';
+        updater.stdout.on('data', (d) => (output += d.toString()));
+        updater.stderr.on('data', (d) => (output += d.toString()));
+        updater.on('close', (code) => {
+            if (code === 0) {
+                logger.info('Verificación de actualización de yt-dlp:', output.trim().slice(0, 120));
+            } else {
+                logger.warn('No se pudo verificar actualización de yt-dlp:', output.trim().slice(0, 120));
+            }
+        });
+        updater.on('error', () => {});
     }
 
     async ensureYtDlpExists() {
@@ -121,24 +175,41 @@ class DownloadService {
 
     _downloadFile(url, destPath) {
         return new Promise((resolve, reject) => {
+            let redirects = 0;
             const file = fs.createWriteStream(destPath);
+            const fail = (err) => {
+                file.close();
+                fs.unlink(destPath, () => {});
+                reject(err);
+            };
             const request = (targetUrl) => {
+                if (redirects > 5) {
+                    fail(new Error('Demasiados redirects'));
+                    return;
+                }
+                redirects++;
                 https
                     .get(targetUrl, (response) => {
-                        if (response.statusCode === 302 || response.statusCode === 301) {
+                        const code = response.statusCode;
+                        if (
+                            [301, 302, 307, 308].includes(code) &&
+                            response.headers.location
+                        ) {
+                            response.resume();
                             request(response.headers.location);
+                            return;
+                        }
+                        if (code !== 200) {
+                            response.resume();
+                            fail(new Error(`HTTP ${code} descargando ${path.basename(destPath)}`));
                             return;
                         }
                         response.pipe(file);
                         file.on('finish', () => {
-                            file.close();
-                            resolve();
+                            file.close(() => resolve());
                         });
                     })
-                    .on('error', (err) => {
-                        fs.unlink(destPath, () => {});
-                        reject(err);
-                    });
+                    .on('error', fail);
             };
             request(url);
         });
@@ -151,6 +222,7 @@ class DownloadService {
 
         return new Promise((resolve) => {
             const args = [
+                ...this._cookieArgs(),
                 url,
                 '-j',
                 '--no-warnings',
@@ -242,17 +314,25 @@ class DownloadService {
         };
     }
 
-    downloadBestAudio(url, outputPath, onProgress, taskId = null) {
-        this._prepareOutputPath(outputPath);
+    /**
+     * Descarga el mejor audio disponible.
+     * Usa template con %(ext)s y --print after_move:filepath para conocer la
+     * ruta REAL escrita por yt-dlp (el mejor audio puede ser webm u m4a).
+     * @returns {Promise<string>} ruta absoluta del archivo descargado
+     */
+    downloadBestAudio(url, outputDir, baseName, onProgress, taskId = null) {
+        fs.mkdirSync(outputDir, { recursive: true });
+        const template = path.join(outputDir, `${baseName}.%(ext)s`);
 
         return new Promise((resolve, reject) => {
             const args = [
+                ...this._cookieArgs(),
                 url,
                 '-o',
-                outputPath,
+                template,
                 '--no-warnings',
                 '-f',
-                'bestaudio',
+                'bestaudio/best',
                 '--no-playlist',
                 '-N',
                 '4',
@@ -264,7 +344,10 @@ class DownloadService {
                 '--force-overwrites',
                 '--newline',
                 '--progress-template',
-                '%(progress._percent_str)s'
+                '%(progress._percent_str)s',
+                '--print',
+                'after_move:filepath',
+                '--no-simulate'
             ];
 
             const ytdlp = spawn(this.ytDlpPath, args, { windowsHide: true });
@@ -272,6 +355,7 @@ class DownloadService {
                 this._registerProcess(taskId, ytdlp);
             }
             let stderr = '';
+            const stdoutLines = [];
 
             ytdlp.stdout.on('data', (data) => {
                 const output = data.toString();
@@ -282,6 +366,7 @@ class DownloadService {
                         onProgress(percent);
                     }
                 }
+                stdoutLines.push(...output.split('\n'));
             });
 
             ytdlp.stderr.on('data', (d) => (stderr += d.toString()));
@@ -291,7 +376,16 @@ class DownloadService {
                     this._unregisterProcess(taskId, ytdlp);
                 }
                 if (code === 0) {
-                    resolve();
+                    // La última línea sin '%' es la ruta impresa por after_move:filepath
+                    const pathLine = [...stdoutLines]
+                        .reverse()
+                        .find((l) => l.trim() && !l.includes('%'));
+                    const finalPath = pathLine ? pathLine.trim() : null;
+                    if (finalPath && fs.existsSync(finalPath)) {
+                        resolve(finalPath);
+                    } else {
+                        reject(new Error('yt-dlp terminó sin reportar el archivo descargado'));
+                    }
                 } else {
                     reject(new Error(`yt-dlp error code ${code}: ${stderr.slice(0, 100)}`));
                 }
@@ -322,6 +416,7 @@ class DownloadService {
                         : 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
 
             const args = [
+                ...this._cookieArgs(),
                 url,
                 '-o',
                 outputPath,
@@ -385,11 +480,19 @@ class DownloadService {
         });
     }
 
+    /**
+     * Hilos para los encoders de audio: entre 2 y 4. Más hilos no acelera
+     * la codificación de audio y saturaba CPUs pequeñas.
+     */
+    _encoderThreads() {
+        const os = require('os');
+        return Math.min(Math.max(os.cpus().length || 2, 2), 4);
+    }
+
     convertToAAC(inputPath, outputPath, onProgress) {
         const ffmpeg = require('fluent-ffmpeg');
         ffmpeg.setFfmpegPath(this.ffmpegPath);
-        const os = require('os');
-        const threads = Math.max(os.cpus().length, 2);
+        const threads = this._encoderThreads();
 
         const tempOutputPath = path.join(this.tempDir, `${path.basename(outputPath)}.tmp.aac`);
         this._prepareOutputPath(tempOutputPath);
@@ -421,8 +524,7 @@ class DownloadService {
     convertToMp3(inputPath, outputPath, onProgress) {
         const ffmpeg = require('fluent-ffmpeg');
         ffmpeg.setFfmpegPath(this.ffmpegPath);
-        const os = require('os');
-        const threads = Math.max(os.cpus().length, 2);
+        const threads = this._encoderThreads();
 
         const tempOutputPath = path.join(this.tempDir, `${path.basename(outputPath)}.tmp.mp3`);
         this._prepareOutputPath(tempOutputPath);
@@ -432,7 +534,7 @@ class DownloadService {
                 .audioCodec('libmp3lame')
                 .audioBitrate(320)
                 .audioChannels(2)
-                .outputOptions([`-threads ${threads}`, '-q:a 0', '-compression_level 0', '-y'])
+                .outputOptions([`-threads ${threads}`, '-q:a 0', '-y'])
                 .on('progress', (p) => {
                     const percent = p.percent || 0;
                     onProgress(percent);
@@ -493,17 +595,20 @@ class DownloadService {
         });
     }
 
+    /**
+     * Incrusta metadatos ID3v2 (y carátula opcional).
+     * Usa spawn directo de ffmpeg: el tokenizador de fluent-ffmpeg parte los
+     * valores con espacios ("title=Smoke Test" -> dos argumentos) y rompía
+     * todos los títulos multi-palabra.
+     */
     applyMediaMetadata(inputPath, outputPath, metadata, coverPath) {
-        const ffmpeg = require('fluent-ffmpeg');
-        ffmpeg.setFfmpegPath(this.ffmpegPath);
-
         return new Promise((resolve) => {
-            const command = ffmpeg(inputPath);
-            const options = [];
+            const args = ['-y', '-i', inputPath];
 
             if (coverPath && fs.existsSync(coverPath)) {
-                command.input(coverPath);
-                options.push(
+                args.push(
+                    '-i',
+                    coverPath,
                     '-map',
                     '0:a',
                     '-map',
@@ -514,10 +619,10 @@ class DownloadService {
                     'attached_pic'
                 );
             } else {
-                options.push('-map', '0:a');
+                args.push('-map', '0:a');
             }
 
-            options.push(
+            args.push(
                 '-c:a',
                 path.extname(inputPath).toLowerCase() === '.mp3' ? 'libmp3lame' : 'aac',
                 '-id3v2_version',
@@ -529,18 +634,23 @@ class DownloadService {
                 '-metadata',
                 `album=${metadata.album || 'Media Converter Pro'}`,
                 '-metadata',
-                `comment=${metadata.comment || ''}`
+                `comment=${metadata.comment || ''}`,
+                outputPath
             );
 
-            command
-                .output(outputPath)
-                .outputOptions(options)
-                .on('end', () => resolve(true))
-                .on('error', (err) => {
-                    logger.warn('Error en ffmpeg applyMediaMetadata:', err.message);
+            const proc = spawn(this.ffmpegPath, args, { windowsHide: true });
+            proc.on('close', (code) => {
+                if (code === 0) {
+                    resolve(true);
+                } else {
+                    logger.warn(`applyMediaMetadata: ffmpeg terminó con código ${code}`);
                     resolve(false);
-                })
-                .run();
+                }
+            });
+            proc.on('error', (err) => {
+                logger.warn('Error ejecutando ffmpeg en applyMediaMetadata:', err.message);
+                resolve(false);
+            });
         });
     }
 
@@ -570,6 +680,7 @@ class DownloadService {
             }
 
             const args = [
+                ...this._cookieArgs(),
                 `ytsearch${limit}:${searchQuery}`,
                 '--dump-json',
                 '--flat-playlist',
@@ -686,6 +797,9 @@ class DownloadService {
         }
         if (text.includes('Sign in to confirm your age')) {
             return 'Este video requiere autenticación o edad confirmada';
+        }
+        if (text.includes('confirm you\'re not a bot') || text.includes('not a bot')) {
+            return 'YouTube pidió verificación anti-bot. Abre el menú, activa "Usar cookies del navegador" y vuelve a intentarlo';
         }
         if (text.includes('Requested formats are incompatible')) {
             return 'No se pudo combinar el video y el audio para este formato';

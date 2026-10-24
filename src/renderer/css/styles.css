@@ -549,6 +549,29 @@ body {
     justify-content: center;
 }
 
+.drawer-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.select-settings {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.select-settings:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
 /* =========================================
    Navigation Tabs
    ========================================= */

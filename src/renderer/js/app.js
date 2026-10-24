@@ -36,7 +36,7 @@ function init() {
     console.log('[App] Initializing...');
 
     DOM = {
-        // Titlebar & Drawer
+        // Drawer
         btnHamburger: $('btn-hamburger'),
         btnSettingsGear: $('btn-settings-gear'),
         settingsDrawer: $('settings-drawer'),
@@ -44,6 +44,7 @@ function init() {
         btnCloseDrawer: $('btn-close-drawer'),
         btnMinimize: $('btn-minimize'),
         btnClose: $('btn-close'),
+        selectCookies: $('select-cookies'),
 
         // Tabs
         tabHome: $('tab-home'),
@@ -119,6 +120,9 @@ async function loadInitialData() {
         if (settings?.downloadFolder) {
             State.downloadFolder = settings.downloadFolder;
             updateFolderDisplay();
+        }
+        if (DOM.selectCookies && settings?.ytdlpCookies) {
+            DOM.selectCookies.value = settings.ytdlpCookies;
         }
 
         const queueData = await window.electronAPI.getQueue();
@@ -316,6 +320,26 @@ function setupEventListeners() {
 
     if (DOM.btnDownloadPlaylist) {
         DOM.btnDownloadPlaylist.addEventListener('click', () => handleDownloadSpotifyPlaylist());
+    }
+
+    // Selector de cookies del navegador (anti bot-check de YouTube)
+    if (DOM.selectCookies) {
+        DOM.selectCookies.addEventListener('change', async () => {
+            const value = DOM.selectCookies.value;
+            try {
+                const res = await window.electronAPI.saveSettings({ ytdlpCookies: value });
+                if (res.success) {
+                    showToast(
+                        value === 'none'
+                            ? 'Se desactivaron las cookies del navegador'
+                            : `yt-dlp usará cookies de ${value}`,
+                        'success'
+                    );
+                }
+            } catch (e) {
+                showToast('No se pudo guardar la configuración', 'error');
+            }
+        });
     }
 
     // Downloads
@@ -722,28 +746,54 @@ async function handleDownloadSpotifyPlaylist() {
 // =========================================
 // Queue UI Rendering
 // =========================================
+// Queue UI Rendering (incremental, keyed by id)
+// =========================================
+const downloadItemElements = new Map();
+
 function updateDownloadsList() {
     if (!DOM.downloadsList) {
         return;
     }
 
-    if (!State.downloads || State.downloads.length === 0) {
-        DOM.emptyDownloads?.classList.remove('hidden');
-        DOM.downloadsList.innerHTML = '';
-        DOM.downloadsList.appendChild(DOM.emptyDownloads);
-        return;
+    const list = State.downloads || [];
+    DOM.emptyDownloads?.classList.toggle('hidden', list.length > 0);
+
+    // Eliminar elementos cuya descarga ya no está en la cola
+    for (const [key, el] of downloadItemElements) {
+        if (!list.some((item) => String(item.id) === key)) {
+            el.remove();
+            downloadItemElements.delete(key);
+        }
     }
 
-    DOM.emptyDownloads?.classList.add('hidden');
-
-    const fragment = document.createDocumentFragment();
-    State.downloads.forEach((item) => {
-        const itemEl = createDownloadItemElement(item);
-        fragment.appendChild(itemEl);
+    list.forEach((item) => {
+        const key = String(item.id);
+        const signature = `${item.status}|${item.progress}|${item.title}|${item.error || ''}|${item.filePath || ''}`;
+        const el = downloadItemElements.get(key);
+        if (!el) {
+            const created = createDownloadItemElement(item);
+            created.dataset.signature = signature;
+            downloadItemElements.set(key, created);
+        } else if (el.dataset.signature !== signature) {
+            const fresh = createDownloadItemElement(item);
+            fresh.dataset.signature = signature;
+            el.replaceWith(fresh);
+            downloadItemElements.set(key, fresh);
+        }
     });
 
-    DOM.downloadsList.innerHTML = '';
-    DOM.downloadsList.appendChild(fragment);
+    // Reordenar solo si el orden relativo del DOM divergió del de la cola
+    let cursor = null;
+    for (const item of list) {
+        const el = downloadItemElements.get(String(item.id));
+        if (!el) {
+            continue;
+        }
+        if (cursor && cursor.nextSibling !== el) {
+            DOM.downloadsList.insertBefore(el, cursor.nextSibling);
+        }
+        cursor = el;
+    }
 }
 
 function createDownloadItemElement(item) {
