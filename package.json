@@ -1,6 +1,6 @@
 {
   "name": "media-converter-pro",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Aplicación de escritorio premium para descargar videos de YouTube y convertir archivos multimedia. Soporta MP3, MP4, WAV y más formatos.",
   "main": "src/desktop/main.js",
   "author": {
@@ -36,14 +36,14 @@
     "format": "prettier --write \"src/**/*.{js,css,html}\""
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.3",
-    "@capacitor/core": "^8.5.3",
-    "@capacitor/status-bar": "^8.0.4",
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.2"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/status-bar": "^8.0.4",
     "cross-env": "^7.0.3",
     "electron": "^28.3.3",
     "electron-builder": "^24.9.1",
@@ -54,7 +54,7 @@
   "build": {
     "appId": "com.mediaconverter.pro",
     "productName": "Media Converter Pro",
-    "copyright": "Copyright © 2024 Media Converter Team",
+    "copyright": "Copyright © 2026 Media Converter Team",
     "directories": {
       "output": "dist",
       "buildResources": "build"
