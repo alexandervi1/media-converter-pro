@@ -1,0 +1,19 @@
+{
+    "appId": "com.mediaconverter.pro",
+    "appName": "Media Converter Pro",
+    "webDir": "src/web",
+    "bundledWebRuntime": false,
+    "server": {
+        "androidScheme": "http",
+        "cleartext": true
+    },
+    "android": {
+        "allowMixedContent": true
+    },
+    "plugins": {
+        "StatusBar": {
+            "style": "DARK",
+            "backgroundColor": "#1a1a2e"
+        }
+    }
+}

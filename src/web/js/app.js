@@ -39,6 +39,11 @@ let urlDebounceTimeout = null;
 function init() {
     console.log('[App] Initializing...');
 
+    // Contexto web (navegador/Android): sin controles de ventana nativos
+    if (!window.electronAPI) {
+        document.body.classList.add('web');
+    }
+
     DOM = {
         // Drawer
         btnHamburger: $('btn-hamburger'),
@@ -1111,3 +1116,18 @@ function escapeHtml(text) {
 // Initialize on DOM Ready
 // =========================================
 document.addEventListener('DOMContentLoaded', init);
+
+// PWA: registrar service worker solo en contexto web real (no en Capacitor/Electron)
+if (
+    typeof navigator !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    /^https?:$/.test(location.protocol) &&
+    !window.electronAPI &&
+    !window.Capacitor
+) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            /* la app funciona igual sin SW */
+        });
+    });
+}

@@ -1646,3 +1646,93 @@ body {
     color: #f87171;
     line-height: 1.4;
 }
+
+/* =========================================
+   Mobile / PWA (Android y navegadores)
+   ========================================= */
+
+/* El body recibe .web cuando NO corre dentro de Electron */
+body.web #btn-minimize,
+body.web #btn-close {
+    display: none;
+}
+
+body.web .titlebar {
+    -webkit-app-region: no-drag;
+}
+
+@media (max-width: 600px) {
+    html,
+    body {
+        height: 100dvh;
+    }
+
+    .app {
+        max-width: 100%;
+        height: 100dvh;
+        border: none;
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .titlebar {
+        min-height: 52px;
+    }
+
+    .titlebar-logo span {
+        font-size: 0.95rem;
+    }
+
+    /* Navegación inferior tipo app nativa */
+    .tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        border-top: 1px solid var(--border);
+        border-bottom: none;
+        padding-bottom: env(safe-area-inset-bottom);
+        background: var(--bg-primary, #12121f);
+    }
+
+    .tab {
+        flex-direction: column;
+        gap: 2px;
+        min-height: 56px;
+        font-size: 0.68rem;
+        padding: var(--space-xs) 0;
+    }
+
+    .tab svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .content {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    }
+
+    /* Touch targets cómodos */
+    .btn-primary,
+    .btn-secondary,
+    .btn-success,
+    .format-btn,
+    .folder-selector,
+    .btn-mega {
+        min-height: 44px;
+    }
+
+    .input-group .url-input {
+        font-size: 16px; /* evita zoom automático en iOS/Android */
+    }
+
+    .drawer {
+        width: min(86vw, 320px);
+    }
+
+    .download-item {
+        padding: var(--space-sm);
+    }
+}

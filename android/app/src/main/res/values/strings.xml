@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Media Converter Pro</string>
+    <string name="title_activity_main">Media Converter Pro</string>
+    <string name="package_name">com.mediaconverter.pro</string>
+    <string name="custom_url_scheme">com.mediaconverter.pro</string>
+</resources>
