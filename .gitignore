@@ -3,12 +3,10 @@ node_modules/
 /.pnp
 .pnp.js
 
-# Bun
-bun.lock
-bun.lockb
-
 # Generated & Bundled Files
 src/renderer/js/bundle.js
+src/web/js/bundle.js
+android/app/src/main/assets/public/
 bundle.log
 
 # Build Outputs & Packaging

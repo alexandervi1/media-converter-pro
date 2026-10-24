@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:; connect-src 'self' http: https:"
+        />
+        <title>Media Converter Pro</title>
+        <meta name="theme-color" content="#1a1a2e" />
+        <meta name="description" content="Descarga música y video de YouTube y Spotify" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="MCP" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Pacifico&family=Righteous&family=Share+Tech+Mono&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="css/styles.css" />
+    </head>
+
+    <body>
+        <div class="app">
+            <!-- Custom Title Bar con Menú Hamburguesa e Iconos -->
+            <header class="titlebar">
+                <div class="titlebar-left">
+                    <button
+                        class="titlebar-btn menu-toggle-btn"
+                        id="btn-hamburger"
+                        title="Menú de Opciones"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg>
+                    </button>
+                    <div class="titlebar-logo">
+                        <svg
+                            class="logo-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
+                        </svg>
+                        <span>Media Converter Pro</span>
+                    </div>
+                </div>
+
+                <div class="titlebar-controls">
+                    <span class="conn-dot online" id="conn-dot" title="Conectado al servidor"></span>
+                    <button
+                        class="titlebar-btn"
+                        id="btn-settings-gear"
+                        title="Configuración de Temas"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                            />
+                        </svg>
+                    </button>
+                    <button class="titlebar-btn" id="btn-minimize" title="Minimizar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                    </button>
+                    <button class="titlebar-btn close" id="btn-close" title="Cerrar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="6" y1="18" x2="18" y2="6" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Navigation Tabs -->
+            <nav class="tabs">
+                <button class="tab active" id="tab-home" data-tab="home">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span>Inicio</span>
+                </button>
+                <button class="tab" id="tab-search" data-tab="search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <span>Buscar</span>
+                </button>
+                <button class="tab" id="tab-spotify" data-tab="spotify">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M8 15c2-1 5-1 8 1" />
+                        <path d="M9 12c1.5-.8 4-.8 6 .5" />
+                        <path d="M10 9c1.2-.5 3-.5 4 .3" />
+                    </svg>
+                    <span>Spotify</span>
+                </button>
+                <button class="tab" id="tab-downloads" data-tab="downloads">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <span>Descargas</span>
+                    <span class="tab-badge" id="downloads-badge"></span>
+                </button>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <!-- HOME TAB -->
+                <section class="panel active" id="panel-home">
+                    <div class="home-content">
+                        <h2 class="home-instruction">Convierte y descarga audio o video</h2>
+
+                        <!-- Input principal con Pegar dentro -->
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                class="url-input"
+                                id="url-input"
+                                placeholder="Pega el enlace de YouTube aquí..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <button
+                                class="btn-primary"
+                                id="btn-paste"
+                                title="Pegar enlace del portapapeles"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+                                    />
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                                </svg>
+                                <span>Pegar</span>
+                            </button>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="loading-state hidden" id="loading-state">
+                            <div class="spinner"></div>
+                            <span>Obteniendo información del enlace...</span>
+                        </div>
+
+                        <!-- Video Preview -->
+                        <div class="video-preview hidden" id="video-preview">
+                            <img class="preview-thumb" id="preview-thumb" src="" alt="Miniatura" />
+                            <div class="preview-info">
+                                <h3 class="preview-title" id="preview-title">Título del Video</h3>
+                                <p class="preview-channel" id="preview-channel">Nombre del Canal</p>
+                            </div>
+                        </div>
+
+                        <!-- Fila de Ajustes de Descarga: Carpeta y Formatos -->
+                        <div class="download-settings-row">
+                            <!-- Folder Selector -->
+                            <button
+                                class="folder-selector"
+                                id="btn-folder"
+                                title="Seleccionar carpeta de descarga"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                                    />
+                                </svg>
+                                <span id="folder-path">Seleccionar carpeta...</span>
+                            </button>
+
+                            <!-- Format Selector -->
+                            <div class="format-picker hidden" id="format-selector">
+                                <button
+                                    class="format-btn active"
+                                    id="btn-format-mp3"
+                                    data-format="mp3"
+                                >
+                                    🎵 MP3 320k
+                                </button>
+                                <button class="format-btn" id="btn-format-mp4" data-format="mp4">
+                                    🎬 MP4 Full HD
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Download Action Button -->
+                        <button class="btn-success btn-mega hidden" id="btn-download">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            <span id="download-btn-text">Descargar MP3</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SEARCH TAB (Buscador Avanzado) -->
+                <section class="panel" id="panel-search">
+                    <div class="search-content">
+                        <!-- Search Input Group -->
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                class="url-input"
+                                id="search-input"
+                                placeholder="Buscar canción, artista o video..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <button class="btn-primary" id="btn-search" title="Buscar en YouTube">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                </svg>
+                                <span>Buscar</span>
+                            </button>
+                        </div>
+
+                        <!-- Filtros del Buscador -->
+                        <div class="search-filters" id="search-filters">
+                            <button class="filter-chip active" data-type="all">Todos</button>
+                            <button class="filter-chip" data-type="music">
+                                🎵 Música HQ (VEVO/Audio)
+                            </button>
+                        </div>
+
+                        <!-- Search Results -->
+                        <div class="search-results" id="search-results">
+                            <p class="empty-message">Busca canciones o videos para descargar</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SPOTIFY TAB -->
+                <section class="panel" id="panel-spotify">
+                    <div class="spotify-content">
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                class="url-input"
+                                id="spotify-input"
+                                placeholder="Pega el enlace de Spotify (Playlist, Álbum, Canción)..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <button class="btn-spotify" id="btn-load-spotify">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <span>Cargar</span>
+                            </button>
+                        </div>
+
+                        <!-- Loading Spotify -->
+                        <div class="loading-state hidden" id="spotify-loading">
+                            <div class="spinner spotify"></div>
+                            <span>Parseando metadatos de Spotify...</span>
+                        </div>
+
+                        <!-- Playlist Preview -->
+                        <div class="playlist-preview hidden" id="playlist-preview">
+                            <div class="playlist-header">
+                                <img
+                                    class="playlist-cover"
+                                    id="playlist-cover"
+                                    src=""
+                                    alt="Portada"
+                                />
+                                <div class="playlist-info">
+                                    <h3 class="playlist-name" id="playlist-name">
+                                        Nombre de Playlist
+                                    </h3>
+                                    <p class="playlist-count" id="playlist-count">0 canciones</p>
+                                </div>
+                            </div>
+                            <div class="track-list" id="track-list"></div>
+                        </div>
+
+                        <button class="btn-spotify btn-mega hidden" id="btn-download-playlist">
+                            Descargar Playlist Completa
+                        </button>
+                    </div>
+                </section>
+
+                <!-- DOWNLOADS TAB -->
+                <section class="panel" id="panel-downloads">
+                    <div class="downloads-content">
+                        <div class="downloads-header">
+                            <h2>Cola de Descargas</h2>
+                            <div class="downloads-actions">
+                                <button
+                                    class="btn-secondary"
+                                    id="btn-open-folder"
+                                    title="Abrir carpeta de descargas"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <path
+                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                                        />
+                                    </svg>
+                                    <span>Abrir Carpeta</span>
+                                </button>
+                                <button
+                                    class="btn-secondary"
+                                    id="btn-clear"
+                                    title="Limpiar completados"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                        />
+                                    </svg>
+                                    <span>Limpiar Cola</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Downloads List -->
+                        <div class="downloads-list" id="downloads-list">
+                            <p class="empty-message" id="empty-downloads">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.5"
+                                >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Las descargas aparecerán aquí
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- DRAWER / MENU LATERAL HAMBURGUESA & CONFIGURACION -->
+            <div class="drawer-overlay hidden" id="drawer-overlay"></div>
+            <aside class="drawer hidden" id="settings-drawer">
+                <div class="drawer-header">
+                    <div class="drawer-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                            />
+                        </svg>
+                        <span>Configuración & Temas</span>
+                    </div>
+                    <button class="drawer-close" id="btn-close-drawer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="drawer-body">
+                    <section class="theme-section">
+                        <h4 class="theme-title">Seleccionar Tema Visual</h4>
+                        <div class="theme-grid">
+                            <!-- Tema Dark Standard -->
+                            <button class="theme-card active" data-theme="dark">
+                                <div class="theme-preview dark-preview"></div>
+                                <span class="theme-name">🌙 Dark Pro</span>
+                            </button>
+
+                            <!-- Tema Tokyo Night -->
+                            <button class="theme-card" data-theme="tokyo-night">
+                                <div class="theme-preview tokyo-preview"></div>
+                                <span class="theme-name">🌃 Tokyo Night</span>
+                            </button>
+
+                            <!-- Tema AIMP Player -->
+                            <button class="theme-card" data-theme="aimp">
+                                <div class="theme-preview aimp-preview"></div>
+                                <span class="theme-name">📻 AIMP Orange</span>
+                            </button>
+
+                            <!-- Tema Retro 50s Rockabilly/Diner -->
+                            <button class="theme-card" data-theme="retro">
+                                <div class="theme-preview retro-preview"></div>
+                                <span class="theme-name">🎸 Retro 50s Diner</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="drawer-section">
+                        <h4 class="theme-title">Servidor</h4>
+                        <div class="lan-toggle-row">
+                            <label class="drawer-hint" for="lan-toggle">
+                                Acceso desde el teléfono (misma red WiFi)
+                            </label>
+                            <label class="switch">
+                                <input type="checkbox" id="lan-toggle" />
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="lan-info" id="lan-info"></div>
+                        <div class="server-mobile hidden" id="server-mobile-block">
+                            <p class="drawer-hint">Servidor conectado:</p>
+                            <code class="lan-url" id="server-info-mobile"></code>
+                            <button class="btn-secondary btn-full" id="btn-change-server">
+                                Cambiar servidor
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="drawer-section">
+                        <h4 class="theme-title">Conexión</h4>
+                        <label class="drawer-hint" for="select-cookies">
+                            Si YouTube pide verificación anti-bot, usa las cookies de un
+                            navegador donde tengas sesión iniciada (ciérralo antes).
+                        </label>
+                        <select class="select-settings" id="select-cookies">
+                            <option value="none">Sin cookies del navegador</option>
+                            <option value="chrome">Chrome</option>
+                            <option value="edge">Edge</option>
+                            <option value="firefox">Firefox</option>
+                            <option value="brave">Brave</option>
+                            <option value="opera">Opera</option>
+                        </select>
+                    </section>
+
+                    <section class="drawer-section">
+                        <h4 class="theme-title">Herramientas del Sistema</h4>
+                        <button class="btn-secondary btn-full" id="btn-cache">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M23 4v6h-6" />
+                                <path d="M1 20v-6h6" />
+                                <path
+                                    d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                                />
+                            </svg>
+                            Limpiar Caché de Descargas
+                        </button>
+                    </section>
+                </div>
+            </aside>
+
+            <!-- Toast Notifications -->
+            <div class="toast hidden" id="toast">
+                <p class="toast-message" id="toast-message"></p>
+            </div>
+
+            <!-- Overlay de conexión (móvil / navegador sin servidor configurado) -->
+            <div class="connect-overlay hidden" id="connect-overlay">
+                <div class="connect-card">
+                    <div class="connect-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
+                        </svg>
+                        <h2>Conectar al servidor</h2>
+                    </div>
+                    <p class="drawer-hint">
+                        En la PC, abre Media Converter Pro, entra al menú y activa
+                        "Acceso desde el teléfono". Introduce la dirección y el token
+                        que muestra la app de escritorio.
+                    </p>
+                    <label class="connect-label" for="connect-url">Dirección del servidor</label>
+                    <input
+                        type="text"
+                        class="connect-input"
+                        id="connect-url"
+                        placeholder="192.168.1.50:45690"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <label class="connect-label" for="connect-token">Token de emparejamiento</label>
+                    <input
+                        type="text"
+                        class="connect-input"
+                        id="connect-token"
+                        placeholder="ab12cd34"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <button class="btn-primary btn-full" id="btn-connect">Conectar</button>
+                    <p class="connect-error" id="connect-error"></p>
+                </div>
+            </div>
+        </div>
+
+        <script defer src="js/bundle.js"></script>
+    </body>
+</html>
