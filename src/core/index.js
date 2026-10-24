@@ -381,9 +381,13 @@ class AppCore {
 
             // --- FASE 1: DESCARGA ---
             if (item.format === 'mp4') {
-                const onProgress = (pct) => {
-                    const normalized = Math.min(Math.round(pct * 0.99), 99);
-                    queue.updateItem(item.id, { progress: normalized });
+                const onProgress = ({ percent, speed, eta }) => {
+                    const normalized = Math.min(Math.round(percent * 0.99), 99);
+                    queue.updateItem(item.id, {
+                        progress: normalized,
+                        speed: speed || null,
+                        eta: eta || null
+                    });
                     this._emitQueueUpdate();
                 };
                 await downloads.downloadVideo(
@@ -400,21 +404,25 @@ class AppCore {
                     resolvedUrl,
                     tempDir,
                     `${item.id}_${videoId}`,
-                    (pct) => {
-                        const finalPct = Math.min(Math.round(pct * 0.75), 75);
-                        queue.updateItem(item.id, { progress: finalPct });
+                    ({ percent, speed, eta }) => {
+                        const finalPct = Math.min(Math.round(percent * 0.75), 75);
+                        queue.updateItem(item.id, {
+                            progress: finalPct,
+                            speed: speed || null,
+                            eta: eta || null
+                        });
                         this._emitQueueUpdate();
                     },
                     item.id
                 );
 
                 // 2. Convertir
-                queue.updateItem(item.id, { status: 'converting' });
+                queue.updateItem(item.id, { status: 'converting', speed: null, eta: null });
                 this._emitQueueUpdate();
 
                 const conversionProgress = (pct) => {
                     const finalPct = Math.min(75 + Math.round(pct * 0.25), 99);
-                    queue.updateItem(item.id, { progress: finalPct });
+                    queue.updateItem(item.id, { progress: finalPct, speed: null, eta: null });
                     this._emitQueueUpdate();
                 };
 

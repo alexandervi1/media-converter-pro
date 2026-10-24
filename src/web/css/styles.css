@@ -5,38 +5,38 @@
 /* CSS Variables & Themes */
 :root,
 [data-theme='dark'] {
-    /* Base Dark Theme */
-    --bg-primary: #0a1628;
-    --bg-secondary: #0f1e36;
-    --bg-gradient: linear-gradient(145deg, #0a1628 0%, #0d1321 50%, #0f172a 100%);
+    /* Base Dark Theme (design system mobile-first) */
+    --bg-primary: #0a1220;
+    --bg-secondary: #111b2e;
+    --bg-gradient: linear-gradient(145deg, #0a1220 0%, #0c1526 50%, #111b2e 100%);
 
-    --surface: rgba(59, 130, 246, 0.06);
-    --surface-hover: rgba(59, 130, 246, 0.12);
-    --surface-active: rgba(59, 130, 246, 0.18);
+    --surface: #111b2e;
+    --surface-hover: #16233a;
+    --surface-active: #1b2b46;
 
-    --border: rgba(59, 130, 246, 0.15);
-    --border-hover: rgba(59, 130, 246, 0.3);
+    --border: #22324d;
+    --border-hover: #3b82f6;
 
     --primary: #3b82f6;
     --primary-dark: #2563eb;
     --primary-glow: rgba(59, 130, 246, 0.3);
 
-    --success: #10b981;
-    --success-dark: #059669;
-    --success-glow: rgba(16, 185, 129, 0.3);
+    --success: #22c55e;
+    --success-dark: #16a34a;
+    --success-glow: rgba(34, 197, 94, 0.3);
 
     --spotify: #1db954;
     --spotify-dark: #1aa34a;
 
     --error: #ef4444;
     --warning: #f59e0b;
-    --accent: #8b5cf6;
+    --accent: #3b82f6;
 
-    --text-primary: #f1f5f9;
-    --text-secondary: rgba(241, 245, 249, 0.7);
-    --text-muted: rgba(241, 245, 249, 0.4);
+    --text-primary: #eef3fb;
+    --text-secondary: #8fa0ba;
+    --text-muted: #6b7f9e;
 
-    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-main: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --btn-radius: 12px;
     --btn-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
@@ -1736,3 +1736,618 @@ body.web .titlebar {
         padding: var(--space-sm);
     }
 }
+
+/* =========================================
+   Skeleton Loaders (shimmer)
+   ========================================= */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        var(--surface-hover) 50%,
+        var(--surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.3s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-item {
+    pointer-events: none;
+}
+
+.skeleton-thumb {
+    width: 120px;
+    height: 68px;
+    flex-shrink: 0;
+}
+
+.skeleton-thumb-lg {
+    width: 96px;
+    height: 54px;
+    flex-shrink: 0;
+}
+
+.skeleton-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.skeleton-line {
+    height: 12px;
+}
+
+.skeleton-line.w-80 {
+    width: 80%;
+}
+
+.skeleton-line.w-70 {
+    width: 70%;
+}
+
+.skeleton-line.w-45 {
+    width: 45%;
+}
+
+.skeleton-line.w-40 {
+    width: 40%;
+}
+
+/* =========================================
+   Quality Picker (chips, mobile-first)
+   ========================================= */
+.quality-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    animation: fadeIn 0.2s ease;
+}
+
+.quality-chip {
+    min-height: 40px;
+    padding: var(--space-xs) var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.quality-chip:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.quality-chip.active {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+/* =========================================
+   Feedback táctil (mobile-first)
+   ========================================= */
+.quality-chip:active,
+.format-btn:active,
+.filter-chip:active,
+.tab:active,
+.titlebar-btn:active,
+.btn-ghost:active {
+    transform: scale(0.96);
+}
+
+.download-status .status-extra {
+    color: var(--text-secondary);
+}
+
+/* =========================================
+   Pantalla Buscar — rediseño mobile-first (360px primero)
+   ========================================= */
+
+/* --- Buscador: input con icono y X dentro --- */
+.search-form {
+    width: 100%;
+}
+
+.search-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    height: 52px;
+    padding: 0 96px 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 16px; /* evita zoom automático en iOS/Android */
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+    display: none; /* usamos nuestra propia X */
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+.search-clear,
+.search-submit {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.search-clear {
+    right: 48px;
+}
+
+.search-submit {
+    right: 4px;
+    color: var(--primary);
+}
+
+.search-clear:active,
+.search-submit:active {
+    background: var(--surface-active);
+    transform: translateY(-50%) scale(0.94);
+}
+
+.search-clear svg,
+.search-submit svg {
+    width: 22px;
+    height: 22px;
+}
+
+.search-clear.hidden {
+    display: none;
+}
+
+/* --- Chips de filtro: scroll horizontal sin barra --- */
+.search-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+}
+
+.search-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.filter-chip:active {
+    transform: scale(0.96);
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* --- Estado vacío: recientes, sugerencias, pegar enlace --- */
+.empty-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.empty-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-height: 44px;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.recent-item svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.recent-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-item:active {
+    background: var(--surface-active);
+}
+
+.suggestion-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.suggestion-chip {
+    min-height: 36px;
+    padding: 0 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.suggestion-chip:active {
+    background: var(--surface-active);
+    color: var(--text-primary);
+}
+
+.paste-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+}
+
+.paste-card svg {
+    width: 26px;
+    height: 26px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.paste-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.paste-card-info strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.paste-card-info span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.paste-card .btn-paste-link {
+    min-height: 40px;
+    padding: 0 16px;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.paste-card .btn-paste-link:active {
+    transform: scale(0.96);
+}
+
+/* --- Sin resultados --- */
+.no-results {
+    padding: var(--space-xl) var(--space-lg);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+/* --- Tarjeta de resultado --- */
+.result-card {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    animation: fadeIn 0.2s ease;
+}
+
+.result-thumb-wrap {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+.result-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.result-duration {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    padding: 1px 5px;
+    background: rgba(0, 0, 0, 0.78);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.result-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.result-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.result-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: auto;
+}
+
+.result-actions {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: 6px;
+}
+
+.result-format-btn {
+    min-height: 36px;
+    padding: 0 12px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s ease;
+}
+
+.result-format-btn:active {
+    transform: scale(0.95);
+}
+
+.result-format-btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.result-format-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* Progreso dentro de la tarjeta */
+.result-progress {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.result-progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.result-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    border-radius: var(--radius-full);
+    transition: width 0.25s ease;
+}
+
+.result-progress-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.result-progress.done .result-progress-fill {
+    background: var(--success);
+}
+
+.result-progress.done .result-progress-label {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.result-progress.error .result-progress-label {
+    color: var(--error);
+}
+
+/* --- Barra inferior: indicador de 3px --- */
+.tab {
+    position: relative;
+}
+
+.tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 22%;
+    right: 22%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: transparent;
+    transition: background 0.15s ease;
+}
+
+.tab[aria-current='page']::before {
+    background: var(--primary);
+}
+
+/* --- Accesibilidad: foco visible y movimiento reducido --- */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+html {
+    color-scheme: dark;
+}
+
+/* Botones de 44px en el header */
+.titlebar-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ajustes móviles de la pantalla Buscar */
+@media (max-width: 600px) {
+    .search-input {
+        height: 52px;
+    }
+
+    .tab {
+        min-height: 52px;
+        font-size: 12px;
+    }
+
+    .tab svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .search-results {
+        max-height: none;
+        overflow-y: visible;
+    }
+}
+

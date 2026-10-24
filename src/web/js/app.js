@@ -65,7 +65,7 @@ function init() {
         lanInfo: $('lan-info'),
         serverInfoMobile: $('server-info-mobile'),
         btnChangeServer: $('btn-change-server'),
-        connDot: $('conn-dot'),
+        connStatus: $('conn-status'),
 
         // Tabs
         tabHome: $('tab-home'),
@@ -83,7 +83,8 @@ function init() {
         // Home
         urlInput: $('url-input'),
         btnPaste: $('btn-paste'),
-        loadingState: $('loading-state'),
+        previewSkeleton: $('preview-skeleton'),
+        qualityPicker: $('quality-picker'),
         videoPreview: $('video-preview'),
         previewThumb: $('preview-thumb'),
         previewTitle: $('preview-title'),
@@ -97,8 +98,9 @@ function init() {
         folderPath: $('folder-path'),
 
         // Search
+        searchForm: $('search-form'),
         searchInput: $('search-input'),
-        btnSearch: $('btn-search'),
+        searchClear: $('btn-search-clear'),
         searchResults: $('search-results'),
         searchFilters: $('search-filters'),
 
@@ -386,11 +388,12 @@ function setupEventListeners() {
         });
     }
 
-    // Indicador de conexión con el servidor
+    // Estado de conexión con el servidor (texto en el drawer > Servidor)
     Api.onConnectionChange((online) => {
-        if (DOM.connDot) {
-            DOM.connDot.classList.toggle('online', online);
-            DOM.connDot.title = online ? 'Conectado al servidor' : 'Sin conexión con el servidor';
+        if (DOM.connStatus) {
+            DOM.connStatus.innerHTML = online
+                ? '<span class="conn-text" style="color: var(--success)">● Conectado</span>'
+                : '<span class="conn-text" style="color: var(--error)">● Sin conexión</span>';
         }
     });
 
@@ -458,34 +461,39 @@ function setupEventListeners() {
         DOM.btnFolder.addEventListener('click', () => handleSelectFolder());
     }
 
-    // Search - Actions & Enter
-    if (DOM.btnSearch) {
-        DOM.btnSearch.addEventListener('click', () => {
+    // Search - submit (botón lupa + tecla Enter/Go del teclado móvil)
+    if (DOM.searchForm) {
+        DOM.searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             const query = DOM.searchInput?.value.trim();
             if (query) {
                 handleSearch(query);
+                DOM.searchInput?.blur();
             }
         });
     }
 
-    if (DOM.searchInput) {
-        DOM.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const query = DOM.searchInput.value.trim();
-                if (query) {
-                    handleSearch(query);
-                }
-            }
+    // Search - botón X para borrar (visible solo con texto)
+    if (DOM.searchInput && DOM.searchClear) {
+        DOM.searchInput.addEventListener('input', () => {
+            DOM.searchClear.classList.toggle('hidden', !DOM.searchInput.value);
+        });
+        DOM.searchClear.addEventListener('click', () => {
+            DOM.searchInput.value = '';
+            DOM.searchClear.classList.add('hidden');
+            DOM.searchInput.focus();
         });
     }
 
     if (DOM.searchFilters) {
         DOM.searchFilters.querySelectorAll('.filter-chip').forEach((chip) => {
             chip.addEventListener('click', () => {
-                DOM.searchFilters
-                    .querySelectorAll('.filter-chip')
-                    .forEach((c) => c.classList.remove('active'));
+                DOM.searchFilters.querySelectorAll('.filter-chip').forEach((c) => {
+                    c.classList.remove('active');
+                    c.setAttribute('aria-pressed', 'false');
+                });
                 chip.classList.add('active');
+                chip.setAttribute('aria-pressed', 'true');
                 State.searchFilter = chip.dataset.type || 'all';
 
                 const query = DOM.searchInput?.value.trim();
@@ -564,27 +572,36 @@ function switchTab(tabName) {
 
     const tabs = [DOM.tabHome, DOM.tabSearch, DOM.tabSpotify, DOM.tabDownloads];
     const panels = [DOM.panelHome, DOM.panelSearch, DOM.panelSpotify, DOM.panelDownloads];
+    const tabByName = {
+        home: DOM.tabHome,
+        search: DOM.tabSearch,
+        spotify: DOM.tabSpotify,
+        downloads: DOM.tabDownloads
+    };
+    const panelByName = {
+        home: DOM.panelHome,
+        search: DOM.panelSearch,
+        spotify: DOM.panelSpotify,
+        downloads: DOM.panelDownloads
+    };
 
-    tabs.forEach((tab) => tab?.classList.remove('active'));
+    tabs.forEach((tab) => {
+        tab?.classList.remove('active');
+        tab?.removeAttribute('aria-current');
+    });
     panels.forEach((panel) => panel?.classList.remove('active'));
 
-    switch (tabName) {
-    case 'home':
-        DOM.tabHome?.classList.add('active');
-        DOM.panelHome?.classList.add('active');
-        break;
-    case 'search':
-        DOM.tabSearch?.classList.add('active');
-        DOM.panelSearch?.classList.add('active');
-        break;
-    case 'spotify':
-        DOM.tabSpotify?.classList.add('active');
-        DOM.panelSpotify?.classList.add('active');
-        break;
-    case 'downloads':
-        DOM.tabDownloads?.classList.add('active');
-        DOM.panelDownloads?.classList.add('active');
-        break;
+    const tab = tabByName[tabName];
+    const panel = panelByName[tabName];
+    if (tab) {
+        tab.classList.add('active');
+        tab.setAttribute('aria-current', 'page');
+    }
+    panel?.classList.add('active');
+
+    // Estado vacío de búsqueda la primera vez que se entra
+    if (tabName === 'search' && DOM.searchResults && !DOM.searchResults.children.length) {
+        renderSearchEmptyState();
     }
 }
 
@@ -600,6 +617,7 @@ function setupQueueListeners() {
         }
         updateDownloadsList();
         updateBadge();
+        syncResultCards();
     });
 
     Api.onQueueComplete(() => {
@@ -639,8 +657,8 @@ async function fetchVideoInfo(url) {
     State.isFetchingInfo = true;
     State.activeUrl = url;
 
-    if (DOM.loadingState) {
-        DOM.loadingState.classList.remove('hidden');
+    if (DOM.previewSkeleton) {
+        DOM.previewSkeleton.classList.remove('hidden');
     }
     if (DOM.videoPreview) {
         DOM.videoPreview.classList.add('hidden');
@@ -648,14 +666,17 @@ async function fetchVideoInfo(url) {
     if (DOM.formatSelector) {
         DOM.formatSelector.classList.add('hidden');
     }
+    if (DOM.qualityPicker) {
+        DOM.qualityPicker.classList.add('hidden');
+    }
     if (DOM.btnDownload) {
         DOM.btnDownload.classList.add('hidden');
     }
 
     try {
         const response = await Api.getVideoInfo(url);
-        if (DOM.loadingState) {
-            DOM.loadingState.classList.add('hidden');
+        if (DOM.previewSkeleton) {
+            DOM.previewSkeleton.classList.add('hidden');
         }
 
         if (!response || !response.success || !response.info) {
@@ -688,17 +709,56 @@ async function fetchVideoInfo(url) {
         if (DOM.btnDownload) {
             DOM.btnDownload.classList.remove('hidden');
         }
+        renderQualitySelector(info.availableQualities);
         updateDownloadButtonText();
     } catch (e) {
         console.error('Fetch error:', e);
-        if (DOM.loadingState) {
-            DOM.loadingState.classList.add('hidden');
+        if (DOM.previewSkeleton) {
+            DOM.previewSkeleton.classList.add('hidden');
         }
         showToast('Error al obtener información', 'error');
         State.activeUrl = null;
     } finally {
         State.isFetchingInfo = false;
     }
+}
+
+/**
+ * Selector de calidad para MP4 (mobile-first): chips con las calidades
+ * reales del video que reporta yt-dlp. Se oculta en MP3.
+ */
+function renderQualitySelector(qualities) {
+    if (!DOM.qualityPicker) {
+        return;
+    }
+    const list = (qualities || []).filter((q) => Number.isFinite(q));
+
+    if (State.selectedFormat !== 'mp4' || list.length === 0) {
+        DOM.qualityPicker.classList.add('hidden');
+        DOM.qualityPicker.innerHTML = '';
+        return;
+    }
+
+    DOM.qualityPicker.innerHTML = '';
+    [...list]
+        .sort((a, b) => b - a)
+        .forEach((q) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `quality-chip${  q === State.selectedQuality ? ' active' : ''}`;
+            btn.textContent = q >= 2160 ? '4K' : q >= 1440 ? '2K' : `${q}p`;
+            btn.setAttribute('aria-label', `Calidad ${q}p`);
+            btn.addEventListener('click', () => {
+                State.selectedQuality = q;
+                DOM.qualityPicker
+                    .querySelectorAll('.quality-chip')
+                    .forEach((c) => c.classList.remove('active'));
+                btn.classList.add('active');
+            });
+            DOM.qualityPicker.appendChild(btn);
+        });
+
+    DOM.qualityPicker.classList.remove('hidden');
 }
 
 function setFormat(format) {
@@ -709,6 +769,7 @@ function setFormat(format) {
     if (DOM.btnFormatMp4) {
         DOM.btnFormatMp4.classList.toggle('active', format === 'mp4');
     }
+    renderQualitySelector(State.currentVideoInfo?.availableQualities);
     updateDownloadButtonText();
 }
 
@@ -746,6 +807,9 @@ async function handleDownload() {
             if (DOM.formatSelector) {
                 DOM.formatSelector.classList.add('hidden');
             }
+            if (DOM.qualityPicker) {
+                DOM.qualityPicker.classList.add('hidden');
+            }
             if (DOM.btnDownload) {
                 DOM.btnDownload.classList.add('hidden');
             }
@@ -781,55 +845,259 @@ function updateFolderDisplay() {
 }
 
 // =========================================
-// Search Handlers (Buscador Avanzado)
+// Search Handlers (Buscador Avanzado, mobile-first)
 // =========================================
+const RECENT_KEY = 'mcp_recent_searches';
+const SUGGESTIONS = ['Bad Bunny', 'Quevedo', 'Rock 80s español', 'Lofi para estudiar'];
+
+/** Descargas activas asociadas a tarjetas de resultado: url -> { qid, card } */
+const resultDownloads = new Map();
+
+function getRecentSearches() {
+    try {
+        return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveRecentSearch(query) {
+    const list = getRecentSearches().filter((q) => q !== query);
+    list.unshift(query);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 4)));
+}
+
+function formatDuration(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+        return '';
+    }
+    const s = Math.round(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return h > 0
+        ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+        : `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+/** Estado vacío: recientes, sugerencias y tarjeta de pegar enlace */
+function renderSearchEmptyState() {
+    if (!DOM.searchResults) {
+        return;
+    }
+    const recents = getRecentSearches();
+
+    const recentsHtml = recents.length
+        ? `
+        <div class="empty-section">
+            <p class="empty-title">Búsquedas recientes</p>
+            ${recents
+        .map(
+            (q) => `
+                <button type="button" class="recent-item" data-query="${escapeHtml(q)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>${escapeHtml(q)}</span>
+                </button>
+            `
+        )
+        .join('')}
+        </div>`
+        : '';
+
+    DOM.searchResults.innerHTML = `
+        ${recentsHtml}
+        <div class="empty-section">
+            <p class="empty-title">Prueba con</p>
+            <div class="suggestion-row">
+                ${SUGGESTIONS.map(
+        (s) =>
+            `<button type="button" class="suggestion-chip" data-query="${escapeHtml(s)}">${escapeHtml(s)}</button>`
+    ).join('')}
+            </div>
+        </div>
+        <div class="paste-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            </svg>
+            <div class="paste-card-info">
+                <strong>Pegar un enlace</strong>
+                <span>YouTube, Spotify o SoundCloud</span>
+            </div>
+            <button type="button" class="btn-paste-link" id="btn-paste-link">Pegar</button>
+        </div>
+    `;
+
+    DOM.searchResults.querySelectorAll('[data-query]').forEach((el) => {
+        el.addEventListener('click', () => {
+            const q = el.dataset.query;
+            if (DOM.searchInput) {
+                DOM.searchInput.value = q;
+                DOM.searchClear?.classList.remove('hidden');
+            }
+            handleSearch(q);
+        });
+    });
+
+    DOM.searchResults.querySelector('#btn-paste-link')?.addEventListener('click', async () => {
+        switchTab('home');
+        await handlePaste();
+    });
+}
+
 async function handleSearch(query) {
     if (!DOM.searchResults) {
         return;
     }
 
-    DOM.searchResults.innerHTML =
-        '<p class="empty-message">Buscando resultados en alta fidelidad...</p>';
+    // Skeleton mientras busca (mismo layout que las tarjetas de resultado)
+    DOM.searchResults.innerHTML = Array.from({ length: 3 })
+        .map(
+            () => `
+            <div class="result-card skeleton-item" aria-hidden="true">
+                <div class="skeleton result-thumb-wrap"></div>
+                <div class="result-info">
+                    <div class="skeleton skeleton-line w-80"></div>
+                    <div class="skeleton skeleton-line w-45"></div>
+                    <div class="skeleton skeleton-line w-30"></div>
+                </div>
+            </div>
+        `
+        )
+        .join('');
 
     try {
         const response = await Api.search(query, 15, State.searchFilter);
         const results = response?.results || [];
 
         if (!results || results.length === 0) {
-            DOM.searchResults.innerHTML =
-                '<p class="empty-message">No se encontraron resultados</p>';
+            DOM.searchResults.innerHTML = `
+                <div class="no-results">
+                    No encontramos nada con "${escapeHtml(query)}".<br />
+                    Prueba con otro filtro o revisa el enlace.
+                </div>
+            `;
             return;
         }
 
-        DOM.searchResults.innerHTML = results
-            .map(
-                (item) => `
-            <div class="search-item" data-url="${item.url || item.webpage_url}">
-                <img src="${item.thumbnail || ''}" alt="" class="search-thumb">
-                <div class="search-info">
-                    <p class="search-title">${escapeHtml(item.cleanTitle || item.title)}</p>
-                    <p class="search-channel">${escapeHtml(item.cleanArtist || item.uploader || item.channel || '')}</p>
-                </div>
-            </div>
-        `
-            )
-            .join('');
-
-        DOM.searchResults.querySelectorAll('.search-item').forEach((item) => {
-            item.addEventListener('click', () => {
-                const url = item.dataset.url;
-                if (url) {
-                    if (DOM.urlInput) {
-                        DOM.urlInput.value = url;
-                    }
-                    switchTab('home');
-                    fetchVideoInfo(url);
-                }
-            });
-        });
+        saveRecentSearch(query);
+        renderResultCards(results);
     } catch (e) {
         console.error('Search error:', e);
-        DOM.searchResults.innerHTML = '<p class="empty-message">Error en la búsqueda</p>';
+        DOM.searchResults.innerHTML =
+            '<div class="no-results">No se pudo completar la búsqueda. Revisa la conexión con el servidor.</div>';
+    }
+}
+
+function renderResultCards(results) {
+    DOM.searchResults.innerHTML = results
+        .map((item) => {
+            const url = item.url || item.webpage_url || '';
+            const artist = item.cleanArtist || item.uploader || item.channel || '';
+            const duration = formatDuration(item.duration);
+            return `
+            <div class="result-card" data-url="${escapeHtml(url)}">
+                <div class="result-thumb-wrap">
+                    <img src="${item.thumbnail || ''}" alt="" class="result-thumb" loading="lazy" />
+                    ${duration ? `<span class="result-duration">${duration}</span>` : ''}
+                </div>
+                <div class="result-info">
+                    <p class="result-title">${escapeHtml(item.cleanTitle || item.title)}</p>
+                    <p class="result-meta">${escapeHtml(artist)} · YouTube</p>
+                    <div class="result-actions">
+                        <button type="button" class="result-format-btn primary" data-format="mp3" aria-label="Descargar MP3 320k">MP3</button>
+                        <button type="button" class="result-format-btn" data-format="m4a" aria-label="Descargar M4A">M4A</button>
+                        <button type="button" class="result-format-btn" data-format="mp4" aria-label="Descargar MP4">MP4</button>
+                    </div>
+                    <div class="result-progress hidden">
+                        <div class="result-progress-track"><div class="result-progress-fill"></div></div>
+                        <p class="result-progress-label"></p>
+                    </div>
+                </div>
+            </div>
+        `;
+        })
+        .join('');
+
+    DOM.searchResults.querySelectorAll('.result-card').forEach((card) => {
+        const url = card.dataset.url;
+        card.querySelectorAll('.result-format-btn').forEach((btn) => {
+            btn.addEventListener('click', () => handleResultDownload(card, url, btn.dataset.format));
+        });
+    });
+}
+
+async function handleResultDownload(card, url, format) {
+    try {
+        const result = await Api.addToQueue({ url, format, quality: null });
+        if (!result.success) {
+            showToast(result.message || 'No se pudo agregar la descarga', 'error');
+            return;
+        }
+
+        // Congelar botones y mostrar progreso dentro de la tarjeta
+        card.querySelectorAll('.result-format-btn').forEach((b) => (b.disabled = true));
+        const progress = card.querySelector('.result-progress');
+        const fill = card.querySelector('.result-progress-fill');
+        const label = card.querySelector('.result-progress-label');
+        progress.classList.remove('hidden', 'done', 'error');
+        fill.style.width = '0%';
+        label.textContent = 'En cola...';
+
+        resultDownloads.set(url, { qid: result.item.id, card });
+        await Api.startQueue();
+        switchTab('downloads');
+    } catch (e) {
+        console.error('Result download error:', e);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/** Sincroniza el progreso de las tarjetas con la cola (vía SSE) */
+function syncResultCards() {
+    for (const [url, entry] of resultDownloads) {
+        if (!document.body.contains(entry.card)) {
+            resultDownloads.delete(url);
+            continue;
+        }
+        const item = State.downloads.find((i) => i.id === entry.qid);
+        if (!item) {
+            continue;
+        }
+        const fill = entry.card.querySelector('.result-progress-fill');
+        const label = entry.card.querySelector('.result-progress-label');
+        const progress = entry.card.querySelector('.result-progress');
+
+        if (item.status === 'completed') {
+            progress.classList.add('done');
+            fill.style.width = '100%';
+            label.textContent = '✓ Guardado en Descargas';
+            entry.card
+                .querySelectorAll('.result-format-btn')
+                .forEach((b) => (b.disabled = false));
+            resultDownloads.delete(url);
+        } else if (item.status === 'error') {
+            progress.classList.add('error');
+            label.textContent = `Error: ${item.error || 'falló la descarga'}`;
+            entry.card
+                .querySelectorAll('.result-format-btn')
+                .forEach((b) => (b.disabled = false));
+            resultDownloads.delete(url);
+        } else {
+            const pct = item.progress || 0;
+            fill.style.width = `${pct}%`;
+            const phase =
+                item.status === 'converting'
+                    ? 'Convirtiendo'
+                    : item.status === 'searching'
+                        ? 'Buscando'
+                        : 'Descargando';
+            const extra = [item.speed, item.eta].filter(Boolean).join(' · ');
+            label.textContent = extra ? `${phase}... ${pct}% · ${extra}` : `${phase}... ${pct}%`;
+        }
     }
 }
 
@@ -961,7 +1229,7 @@ function updateDownloadsList() {
 
     list.forEach((item) => {
         const key = String(item.id);
-        const signature = `${item.status}|${item.progress}|${item.title}|${item.error || ''}|${item.filePath || ''}`;
+        const signature = `${item.status}|${item.progress}|${item.title}|${item.error || ''}|${item.filePath || ''}|${item.speed || ''}|${item.eta || ''}`;
         const el = downloadItemElements.get(key);
         if (!el) {
             const created = createDownloadItemElement(item);
@@ -1006,7 +1274,7 @@ function createDownloadItemElement(item) {
             </div>
             <div class="download-status">
                 <span class="download-badge ${item.format}">${item.format.toUpperCase()}</span>
-                <span>${getStatusText(item.status, item.progress, item.error)}</span>
+                <span>${getStatusText(item)}</span>
             </div>
         </div>
         <div class="download-actions">
@@ -1046,14 +1314,23 @@ function createDownloadItemElement(item) {
     return div;
 }
 
-function getStatusText(status, progress, error) {
+function getStatusText(item) {
+    const { status, progress, error } = item;
     switch (status) {
     case 'pending':
         return 'En espera...';
     case 'searching':
         return 'Buscando audio en YouTube...';
-    case 'downloading':
-        return `Descargando... ${progress || 0}%`;
+    case 'downloading': {
+        let extra = '';
+        if (item.speed) {
+            extra += ` · ${item.speed}`;
+        }
+        if (item.eta) {
+            extra += ` · ${item.eta}`;
+        }
+        return `Descargando... ${progress || 0}%${extra}`;
+    }
     case 'converting':
         return `Convertiendo... ${progress || 0}%`;
     case 'completed':

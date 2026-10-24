@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta
             http-equiv="Content-Security-Policy"
             content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:; connect-src 'self' http: https:"
@@ -58,11 +58,11 @@
                 </div>
 
                 <div class="titlebar-controls">
-                    <span class="conn-dot online" id="conn-dot" title="Conectado al servidor"></span>
                     <button
                         class="titlebar-btn"
                         id="btn-settings-gear"
                         title="Configuración de Temas"
+                        aria-label="Configuración"
                     >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3" />
@@ -158,10 +158,13 @@
                             </button>
                         </div>
 
-                        <!-- Loading State -->
-                        <div class="loading-state hidden" id="loading-state">
-                            <div class="spinner"></div>
-                            <span>Obteniendo información del enlace...</span>
+                        <!-- Loading Skeleton (preview del video) -->
+                        <div class="video-preview skeleton-preview hidden" id="preview-skeleton" aria-hidden="true">
+                            <div class="skeleton skeleton-thumb"></div>
+                            <div class="skeleton-info">
+                                <div class="skeleton skeleton-line w-70"></div>
+                                <div class="skeleton skeleton-line w-40"></div>
+                            </div>
                         </div>
 
                         <!-- Video Preview -->
@@ -204,10 +207,13 @@
                                     🎵 MP3 320k
                                 </button>
                                 <button class="format-btn" id="btn-format-mp4" data-format="mp4">
-                                    🎬 MP4 Full HD
+                                    🎬 MP4
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Quality Selector (solo MP4, chips según calidades del video) -->
+                        <div class="quality-picker hidden" id="quality-picker"></div>
 
                         <!-- Download Action Button -->
                         <button class="btn-success btn-mega hidden" id="btn-download">
@@ -226,45 +232,60 @@
                     </div>
                 </section>
 
-                <!-- SEARCH TAB (Buscador Avanzado) -->
+                <!-- SEARCH TAB (Buscador Avanzado, mobile-first) -->
                 <section class="panel" id="panel-search">
                     <div class="search-content">
-                        <!-- Search Input Group -->
-                        <div class="input-group">
-                            <input
-                                type="text"
-                                class="url-input"
-                                id="search-input"
-                                placeholder="Buscar canción, artista o video..."
-                                autocomplete="off"
-                                spellcheck="false"
-                            />
-                            <button class="btn-primary" id="btn-search" title="Buscar en YouTube">
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
+                        <!-- Buscador: icono dentro del input + botón de borrar -->
+                        <form role="search" class="search-form" id="search-form">
+                            <div class="search-field">
+                                <input
+                                    type="search"
+                                    class="search-input"
+                                    id="search-input"
+                                    placeholder="Canción, artista o enlace"
+                                    enterkeyhint="search"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    aria-label="Buscar canción, artista o enlace"
+                                />
+                                <button
+                                    type="button"
+                                    class="search-clear hidden"
+                                    id="btn-search-clear"
+                                    aria-label="Borrar texto"
                                 >
-                                    <circle cx="11" cy="11" r="8" />
-                                    <path d="m21 21-4.35-4.35" />
-                                </svg>
-                                <span>Buscar</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                                <button type="submit" class="search-submit" aria-label="Buscar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="m21 21-4.35-4.35" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Chips de filtro (scroll horizontal) -->
+                        <div class="search-filters" id="search-filters" role="group" aria-label="Filtros de búsqueda">
+                            <button type="button" class="filter-chip active" data-type="all" aria-pressed="true">
+                                Todos
+                            </button>
+                            <button type="button" class="filter-chip" data-type="music" aria-pressed="false">
+                                🎵 Música HQ
+                            </button>
+                            <button type="button" class="filter-chip" data-type="video" aria-pressed="false">
+                                🎬 Video
+                            </button>
+                            <button type="button" class="filter-chip" data-type="live" aria-pressed="false">
+                                🔴 En vivo
                             </button>
                         </div>
 
-                        <!-- Filtros del Buscador -->
-                        <div class="search-filters" id="search-filters">
-                            <button class="filter-chip active" data-type="all">Todos</button>
-                            <button class="filter-chip" data-type="music">
-                                🎵 Música HQ (VEVO/Audio)
-                            </button>
-                        </div>
-
-                        <!-- Search Results -->
-                        <div class="search-results" id="search-results">
-                            <p class="empty-message">Busca canciones o videos para descargar</p>
-                        </div>
+                        <!-- Resultados: vacío / skeletons / resultados / sin resultados -->
+                        <div class="search-results" id="search-results" aria-live="polite"></div>
                     </div>
                 </section>
 
@@ -443,6 +464,9 @@
 
                     <section class="drawer-section">
                         <h4 class="theme-title">Servidor</h4>
+                        <p class="lan-line" id="conn-status">
+                            <span class="conn-text">Conectado</span>
+                        </p>
                         <div class="lan-toggle-row">
                             <label class="drawer-hint" for="lan-toggle">
                                 Acceso desde el teléfono (misma red WiFi)

@@ -348,7 +348,7 @@ class DownloadService {
                 '--force-overwrites',
                 '--newline',
                 '--progress-template',
-                '%(progress._percent_str)s',
+                '%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
                 '--print',
                 'after_move:filepath',
                 '--no-simulate'
@@ -363,14 +363,10 @@ class DownloadService {
 
             ytdlp.stdout.on('data', (data) => {
                 const output = data.toString();
-                const percentMatch = output.match(/(\d+\.?\d*)%/);
-                if (percentMatch) {
-                    const percent = parseFloat(percentMatch[1]);
-                    if (!isNaN(percent)) {
-                        onProgress(percent);
-                    }
+                for (const line of output.split('\n')) {
+                    this._parseProgressLine(line, onProgress);
+                    stdoutLines.push(line);
                 }
-                stdoutLines.push(...output.split('\n'));
             });
 
             ytdlp.stderr.on('data', (d) => (stderr += d.toString()));
@@ -438,7 +434,7 @@ class DownloadService {
                 '--force-overwrites',
                 '--newline',
                 '--progress-template',
-                '%(progress._percent_str)s'
+                '%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s'
             ];
 
             const ytdlp = spawn(this.ytDlpPath, args, { windowsHide: true });
@@ -448,13 +444,8 @@ class DownloadService {
             let stderr = '';
 
             ytdlp.stdout.on('data', (data) => {
-                const output = data.toString();
-                const percentMatch = output.match(/(\d+\.?\d*)%/);
-                if (percentMatch) {
-                    const percent = parseFloat(percentMatch[1]);
-                    if (!isNaN(percent)) {
-                        onProgress(percent);
-                    }
+                for (const line of data.toString().split('\n')) {
+                    this._parseProgressLine(line, onProgress);
                 }
             });
 
@@ -491,6 +482,31 @@ class DownloadService {
     _encoderThreads() {
         const os = require('os');
         return Math.min(Math.max(os.cpus().length || 2, 2), 4);
+    }
+
+    /**
+     * Parsea una línea de progreso de yt-dlp con el template
+     * "percent|speed|eta" y llama onProgress({ percent, speed, eta }).
+     * speed/eta llegan null si yt-dlp no los conoce ("Unknown").
+     */
+    _parseProgressLine(line, onProgress) {
+        if (!line.includes('%')) {
+            return;
+        }
+        const parts = line.split('|').map((p) => p.trim());
+        const percent = parseFloat(parts[0]);
+        if (isNaN(percent)) {
+            return;
+        }
+        let speed = null;
+        let eta = null;
+        if (parts[1] && !/^unknown/i.test(parts[1])) {
+            speed = parts[1];
+        }
+        if (parts[2] && /^\d+(:\d{2})+$/.test(parts[2])) {
+            eta = parts[2];
+        }
+        onProgress({ percent, speed, eta });
     }
 
     convertToAAC(inputPath, outputPath, onProgress) {
@@ -670,17 +686,16 @@ class DownloadService {
      * Buscador Avanzado con Smart Ranking prioritario de calidad VEVO / Audio Oficial / 4K
      * @param {string} query
      * @param {number} limit
-     * @param {string} type - 'music' | 'video' | 'all'
+     * @param {string} type - 'music' | 'video' | 'live' | 'all'
      */
     search(query, limit = 15, type = 'all') {
         return new Promise((resolve) => {
             let searchQuery = query;
-            if (
-                type === 'music' &&
-                !query.toLowerCase().includes('audio') &&
-                !query.toLowerCase().includes('music')
-            ) {
+            const q = query.toLowerCase();
+            if (type === 'music' && !q.includes('audio') && !q.includes('music')) {
                 searchQuery = `${query} official audio`;
+            } else if (type === 'live' && !q.includes('en vivo') && !q.includes('live')) {
+                searchQuery = `${query} en vivo`;
             }
 
             const args = [
