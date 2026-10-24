@@ -172,7 +172,11 @@ function registerDesktopIpc() {
     });
 
     // Ventana integrada del navegador FLAC (uso manual del usuario)
-    ipcMain.handle('flac:open-view', () => flacView.openFlacView(core));
+    // Solo primitivas por IPC: el objeto BrowserWindow no es serializable
+    ipcMain.handle('flac:open-view', () => {
+        const result = flacView.openFlacView(core);
+        return { success: result.success, reused: result.reused };
+    });
     ipcMain.handle('flac:open-external', () => {
         const { shell } = require('electron');
         shell.openExternal(flacView.FLAC_SITE_URL);
