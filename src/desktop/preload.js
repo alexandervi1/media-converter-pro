@@ -16,5 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Servidor LAN (emparejamiento con el teléfono)
     getLanInfo: () => ipcRenderer.invoke('app:get-lan'),
-    setLanEnabled: (enabled) => ipcRenderer.invoke('app:set-lan', { enabled })
+    setLanEnabled: (enabled) => ipcRenderer.invoke('app:set-lan', { enabled }),
+
+    // Navegador FLAC integrado
+    openFlacView: () => ipcRenderer.invoke('flac:open-view'),
+    openFlacExternal: () => ipcRenderer.invoke('flac:open-external')
 });

@@ -21,6 +21,7 @@ const Api = (() => {
     const queueUpdateListeners = [];
     const queueCompleteListeners = [];
     const connectionListeners = [];
+    const flacUpdateListeners = [];
 
     // =========================================
     // Configuración de conexión
@@ -194,6 +195,16 @@ const Api = (() => {
                 }
             });
         });
+
+        sse.addEventListener('flac-update', (e) => {
+            flacUpdateListeners.forEach((cb) => {
+                try {
+                    cb(JSON.parse(e.data));
+                } catch (err) {
+                    /* payload inválido */
+                }
+            });
+        });
     }
 
     // =========================================
@@ -228,10 +239,12 @@ const Api = (() => {
         selectFolder: () => request('/api/folder/select', { method: 'POST' }),
         openPath: (targetPath) => request('/api/path/open', { method: 'POST', body: { path: targetPath } }),
         clearCache: () => request('/api/cache/clear', { method: 'POST' }),
+        listFlac: () => request('/api/flac/list'),
 
         onQueueUpdate: (cb) => queueUpdateListeners.push(cb),
         onQueueComplete: (cb) => queueCompleteListeners.push(cb),
-        onConnectionChange: (cb) => connectionListeners.push(cb)
+        onConnectionChange: (cb) => connectionListeners.push(cb),
+        onFlacUpdate: (cb) => flacUpdateListeners.push(cb)
     };
 })();
 

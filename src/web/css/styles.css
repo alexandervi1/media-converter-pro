@@ -2557,3 +2557,84 @@ html {
     transform: scale(0.94);
 }
 
+/* =========================================
+   FLAC — pestaña lossless (mobile-first)
+   ========================================= */
+.flac-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.flac-hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+.flac-hero h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.flac-hero code {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--primary);
+}
+
+.flac-hero .btn-primary {
+    margin-top: var(--space-xs);
+}
+
+.flac-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.flac-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    animation: fadeIn 0.2s ease;
+}
+
+.flac-item > svg {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.flac-item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.flac-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.flac-item-size {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+

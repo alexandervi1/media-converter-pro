@@ -129,6 +129,31 @@ async function main() {
     const queue = await httpJson(port, '/api/queue');
     check('/api/queue desde loopback', queue.status === 200 && Array.isArray(queue.body.queue));
 
+    // FLAC: carpeta organizada
+    check('listFlacFiles inicia vacío', core.listFlacFiles().length === 0);
+    const incoming = path.join(dataDir, 'incoming.flac');
+    fs.writeFileSync(incoming, 'x'.repeat(2048));
+    const organized = core.organizeIncomingFile(incoming, 'Test Song.flac');
+    check(
+        'organizeIncomingFile mueve a flac/ con nombre limpio',
+        organized.name === 'Test Song.flac' &&
+            fs.existsSync(organized.path) &&
+            !fs.existsSync(incoming) &&
+            organized.path.includes(path.join('flac', 'Test Song.flac'))
+    );
+    const dup = core.organizeIncomingFile(
+        (fs.writeFileSync(incoming, 'y'), incoming),
+        'Test Song.flac'
+    );
+    check('nombre duplicado queda único', dup.name === 'Test Song (1).flac');
+    const flacList = await httpJson(port, '/api/flac/list');
+    check(
+        '/api/flac/list expone los archivos',
+        flacList.status === 200 &&
+            flacList.body.success === true &&
+            flacList.body.files.length === 2
+    );
+
     // Auth desde IP LAN: token incorrecto -> 401, correcto -> 200
     const lanIp = getLanIp();
     if (lanIp) {

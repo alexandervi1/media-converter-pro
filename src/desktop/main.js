@@ -8,6 +8,7 @@ const crypto = require('crypto');
 
 const { createAppCore } = require('../core');
 const { createAppServer } = require('../server');
+const flacView = require('./flac-view');
 const logger = require('../core/utils/logger');
 
 // Evitar 'Acceso denegado (0x5) GPU Cache Creation failed' en Windows
@@ -168,6 +169,13 @@ function registerDesktopIpc() {
     ipcMain.handle('app:set-lan', async (event, { enabled }) => {
         core.saveSettings({ lanEnabled: enabled === true });
         return restartServer({ lanEnabled: enabled === true });
+    });
+
+    // Ventana integrada del navegador FLAC (uso manual del usuario)
+    ipcMain.handle('flac:open-view', () => flacView.openFlacView(core));
+    ipcMain.handle('flac:open-external', () => {
+        const { shell } = require('electron');
+        shell.openExternal(flacView.FLAC_SITE_URL);
     });
 }
 

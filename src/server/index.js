@@ -215,6 +215,11 @@ function createAppServer({ core, staticDir, token, version = 'dev', onSelectFold
             return;
         }
 
+        if (req.method === 'GET' && pathname === '/api/flac/list') {
+            sendJson(res, 200, { success: true, files: core.listFlacFiles() });
+            return;
+        }
+
         if (req.method === 'POST' && pathname === '/api/cache/clear') {
             await core.clearCache();
             sendJson(res, 200, { success: true, message: 'Cache limpiado' });

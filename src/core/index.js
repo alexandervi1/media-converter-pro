@@ -104,6 +104,7 @@ class AppCore {
             this.downloads.setCookiesBrowser(this.config.ytdlpCookies);
         }
         this.ready = await this.downloads.initialize();
+        this._watchFlacDir();
         return this.ready;
     }
 
@@ -258,6 +259,108 @@ class AppCore {
         this._emitQueueUpdate();
 
         return { success: true, message: `Añadidas ${selected.length} canciones a la cola` };
+    }
+
+    // ==========================================
+    // FLAC (carpeta organizada de descargas lossless)
+    // ==========================================
+
+    getFlacDir() {
+        return path.join(this.config.downloadFolder, 'flac');
+    }
+
+    ensureFlacDir() {
+        const dir = this.getFlacDir();
+        fs.mkdirSync(dir, { recursive: true });
+        return dir;
+    }
+
+    /**
+     * Lista los archivos de la carpeta flac/ (nombre, tamaño, fecha).
+     */
+    listFlacFiles() {
+        const dir = this.getFlacDir();
+        try {
+            return fs
+                .readdirSync(dir)
+                .filter((f) => !f.startsWith('.'))
+                .map((name) => {
+                    const full = path.join(dir, name);
+                    let size = 0;
+                    let mtime = 0;
+                    try {
+                        const st = fs.statSync(full);
+                        if (!st.isFile()) {
+                            return null;
+                        }
+                        size = st.size;
+                        mtime = st.mtimeMs;
+                    } catch (e) {
+                        return null;
+                    }
+                    return { name, size, mtime, path: full };
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.mtime - a.mtime);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /**
+     * Mueve un archivo recién descargado a la carpeta flac/ con nombre
+     * único, y notifica a los clientes. Lo llama el escritorio desde su
+     * manejador de descargas; también sirve para organizar a mano.
+     * @returns {{path: string, name: string}}
+     */
+    organizeIncomingFile(tempPath, originalName) {
+        const dir = this.ensureFlacDir();
+        const base = sanitizeFileName(path.basename(originalName || 'archivo.flac'));
+        const ext = path.extname(base) || '.flac';
+        const stem = base.slice(0, base.length - ext.length) || 'archivo';
+
+        let target = path.join(dir, base);
+        let n = 1;
+        while (fs.existsSync(target)) {
+            target = path.join(dir, `${stem} (${n})${ext}`);
+            n++;
+        }
+        try {
+            fs.renameSync(tempPath, target);
+        } catch (e) {
+            // entre discos rename falla: copiar + borrar
+            fs.copyFileSync(tempPath, target);
+            try {
+                fs.unlinkSync(tempPath);
+            } catch (e2) {
+                /* best-effort */
+            }
+        }
+        logger.info(`FLAC organizado: ${path.basename(target)}`);
+        this.notifyFlacChange();
+        return { path: target, name: path.basename(target) };
+    }
+
+    /**
+     * Emite la lista actual de FLAC a los clientes (SSE).
+     */
+    notifyFlacChange() {
+        this._emit('flac-update', { files: this.listFlacFiles() });
+    }
+
+    _watchFlacDir() {
+        // Si el usuario suelta/baja archivos a mano en la carpeta, la UI se
+        // refresca sola. Debounce: los editores disparan eventos en ráfaga.
+        let timer = null;
+        try {
+            const dir = this.ensureFlacDir();
+            fs.watch(dir, () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => this.notifyFlacChange(), 600);
+            });
+        } catch (e) {
+            logger.warn('No se pudo vigilar la carpeta flac:', e.message);
+        }
     }
 
     // ==========================================

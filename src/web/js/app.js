@@ -71,6 +71,7 @@ function init() {
         tabHome: $('tab-home'),
         tabSearch: $('tab-search'),
         tabSpotify: $('tab-spotify'),
+        tabFlac: $('tab-flac'),
         tabDownloads: $('tab-downloads'),
         downloadsBadge: $('downloads-badge'),
 
@@ -78,7 +79,12 @@ function init() {
         panelHome: $('panel-home'),
         panelSearch: $('panel-search'),
         panelSpotify: $('panel-spotify'),
+        panelFlac: $('panel-flac'),
         panelDownloads: $('panel-downloads'),
+
+        // FLAC
+        btnOpenFlac: $('btn-open-flac'),
+        flacList: $('flac-list'),
 
         // Home
         urlInput: $('url-input'),
@@ -413,6 +419,14 @@ function setupEventListeners() {
     if (DOM.tabDownloads) {
         DOM.tabDownloads.addEventListener('click', () => switchTab('downloads'));
     }
+    if (DOM.tabFlac) {
+        DOM.tabFlac.addEventListener('click', () => switchTab('flac'));
+    }
+
+    // FLAC - abrir buscador lossless
+    if (DOM.btnOpenFlac) {
+        DOM.btnOpenFlac.addEventListener('click', () => handleOpenFlac());
+    }
 
     // Home - Paste button
     if (DOM.btnPaste) {
@@ -589,12 +603,14 @@ function switchTab(tabName) {
         home: DOM.tabHome,
         search: DOM.tabSearch,
         spotify: DOM.tabSpotify,
+        flac: DOM.tabFlac,
         downloads: DOM.tabDownloads
     };
     const panelByName = {
         home: DOM.panelHome,
         search: DOM.panelSearch,
         spotify: DOM.panelSpotify,
+        flac: DOM.panelFlac,
         downloads: DOM.panelDownloads
     };
 
@@ -616,6 +632,10 @@ function switchTab(tabName) {
     if (tabName === 'search' && DOM.searchResults && !DOM.searchResults.children.length) {
         renderSearchEmptyState();
     }
+    // Lista de FLAC cada vez que se entra a la pestaña
+    if (tabName === 'flac') {
+        refreshFlacList();
+    }
 }
 
 // =========================================
@@ -635,6 +655,11 @@ function setupQueueListeners() {
 
     Api.onQueueComplete(() => {
         showToast('¡Todas las descargas han finalizado!', 'success');
+    });
+
+    // Nuevos FLAC organizados (ventana integrada o carpeta vigilada)
+    Api.onFlacUpdate(() => {
+        refreshFlacList();
     });
 }
 
@@ -1112,6 +1137,76 @@ function syncResultCards() {
             label.textContent = extra ? `${phase}... ${pct}% · ${extra}` : `${phase}... ${pct}%`;
         }
     }
+}
+
+// =========================================
+// FLAC Handlers (descargas lossless organizadas)
+// =========================================
+function formatFileSize(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+        return '0 MB';
+    }
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`;
+}
+
+async function handleOpenFlac() {
+    if (window.electronAPI?.openFlacView) {
+        // Escritorio: ventana Chromium integrada con organización automática
+        try {
+            await window.electronAPI.openFlacView();
+            showToast('Buscador FLAC abierto — tus descargas se organizan solas', 'success');
+        } catch (e) {
+            showToast('No se pudo abrir la ventana FLAC', 'error');
+        }
+    } else {
+        // Móvil / navegador: abrir en pestaña nueva (la descarga va al teléfono)
+        window.open('https://flacdownloader.com/', '_blank', 'noopener');
+        showToast(
+            'Se abrió en otra pestaña. Para organizar en la PC, usa la app de escritorio.',
+            'info'
+        );
+    }
+}
+
+async function refreshFlacList() {
+    if (!DOM.flacList) {
+        return;
+    }
+    try {
+        const res = await Api.listFlac();
+        renderFlacList(res?.files || []);
+    } catch (e) {
+        console.error('[App] Error listando FLAC:', e);
+    }
+}
+
+function renderFlacList(files) {
+    if (!DOM.flacList) {
+        return;
+    }
+    if (files.length === 0) {
+        DOM.flacList.innerHTML =
+            '<div class="no-results">Todavía no hay archivos aquí. Descarga tu primer FLAC desde el buscador y aparecerá organizado en esta lista.</div>';
+        return;
+    }
+    DOM.flacList.innerHTML = files
+        .map(
+            (f) => `
+        <div class="flac-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
+            </svg>
+            <div class="flac-item-info">
+                <span class="flac-item-name">${escapeHtml(f.name)}</span>
+                <span class="flac-item-size">${formatFileSize(f.size)}</span>
+            </div>
+        </div>
+    `
+        )
+        .join('');
 }
 
 // =========================================
