@@ -63,6 +63,18 @@ capacidad nativa (diálogos, shell), se inyecta como hook desde `desktop/`
 
 ## 6. Comandos
 
+### Instalar Bun (Windows)
+
+```powershell
+winget install Oven-sh.Bun
+```
+
+Más info: https://bun.sh — Bun también puede instalarse en macOS/Linux con
+`curl -fsSL https://bun.sh/install | bash`. Node 18+ funciona como alternativa
+para el core/servidor (Electron siempre usa su Node embebido).
+
+### Comandos del proyecto
+
 ```bash
 bun install
 bun run dev            # escritorio + DevTools
@@ -73,6 +85,16 @@ bun run build:win      # portable .exe
 bun run lint           # eslint (src + scripts)
 bun scripts/smoke-test.js
 ```
+
+### Organización del repo
+
+```
+design/iconos/   # iconos fuente (Android/Apple/MS/favicon) usados para
+                 # generar los de PWA (src/web/icons) y Android (mipmap)
+build/           # recursos de electron-builder
+scripts/         # smoke test
+```
+
 
 ## 7. Pendientes sugeridos
 
