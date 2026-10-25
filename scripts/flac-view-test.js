@@ -8,7 +8,7 @@
  * <downloadFolder>/flac/. Sale con código 0 si todo pasa.
  */
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -39,9 +39,14 @@ async function main() {
     await new Promise((r) => server.listen(0, '127.0.0.1', r));
     const url = `http://127.0.0.1:${server.address().port}/file`;
 
-    // Ventana con el handler REAL (sin cargar el sitio: navegamos directo)
-    const win = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true } });
-    attachFlacDownloadHandler(core, win);
+    // Sesión de prueba con el handler REAL (igual que persist:flac en la app)
+    const testSession = session.fromPartition('persist:flactest');
+    attachFlacDownloadHandler(core, testSession);
+
+    const win = new BrowserWindow({
+        show: false,
+        webPreferences: { contextIsolation: true, partition: 'persist:flactest' }
+    });
     // La navegación se convierte en descarga: loadURL falla con ERR_FAILED
     // (comportamiento de Chromium); la descarga sigue vía will-download.
     win.loadURL(url).catch(() => {});

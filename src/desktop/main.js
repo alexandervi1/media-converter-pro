@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -112,7 +112,8 @@ function createMainWindow(url) {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
-            nodeIntegration: false
+            nodeIntegration: false,
+            webviewTag: true
         }
     });
 
@@ -171,10 +172,10 @@ function registerDesktopIpc() {
         return restartServer({ lanEnabled: enabled === true });
     });
 
-    // Ventana integrada del navegador FLAC (uso manual del usuario)
-    // Solo primitivas por IPC: el objeto BrowserWindow no es serializable
+    // Ventana aparte del navegador FLAC (opcional; el webview embebido es
+    // la vía principal). Misma partición de sesión para las descargas.
     ipcMain.handle('flac:open-view', () => {
-        const result = flacView.openFlacView(core);
+        const result = flacView.openFlacView(core, flacSession);
         return { success: result.success, reused: result.reused };
     });
     ipcMain.handle('flac:open-external', () => {
@@ -182,6 +183,9 @@ function registerDesktopIpc() {
         shell.openExternal(flacView.FLAC_SITE_URL);
     });
 }
+
+// Sesión compartida del FLAC: webview embebido y ventana aparte
+const flacSession = session.fromPartition(`persist:${require('./flac-view').FLAC_PARTITION}`);
 
 // ==========================================
 // Ciclo de vida
@@ -236,6 +240,9 @@ async function initializeApp() {
 
     const lanEnabled = core.getSettings().lanEnabled === true;
     await core.initialize();
+
+    // Enrutar las descargas del FLAC (webview embebido y ventana aparte)
+    flacView.attachFlacDownloadHandler(core, flacSession);
 
     server = createAppServer({
         core,

@@ -83,6 +83,13 @@ function init() {
         panelDownloads: $('panel-downloads'),
 
         // FLAC
+        flacViewer: $('flac-viewer'),
+        flacHeroMobile: $('flac-hero-mobile'),
+        flacWebview: $('flac-webview'),
+        flacLoading: $('flac-loading'),
+        flacBack: $('flac-back'),
+        flacReload: $('flac-reload'),
+        flacPopout: $('flac-popout'),
         btnOpenFlac: $('btn-open-flac'),
         flacList: $('flac-list'),
 
@@ -423,9 +430,42 @@ function setupEventListeners() {
         DOM.tabFlac.addEventListener('click', () => switchTab('flac'));
     }
 
-    // FLAC - abrir buscador lossless
+    // FLAC - buscador lossless (embebido en escritorio, externo en móvil)
     if (DOM.btnOpenFlac) {
         DOM.btnOpenFlac.addEventListener('click', () => handleOpenFlac());
+    }
+    if (DOM.flacPopout) {
+        DOM.flacPopout.addEventListener('click', async () => {
+            if (window.electronAPI?.openFlacView) {
+                try {
+                    await window.electronAPI.openFlacView();
+                    showToast('Abierto en ventana aparte', 'info');
+                } catch (e) {
+                    showToast('No se pudo abrir la ventana FLAC', 'error');
+                }
+            }
+        });
+    }
+    if (DOM.flacBack && DOM.flacWebview) {
+        DOM.flacBack.addEventListener('click', () => {
+            if (DOM.flacWebview.canGoBack()) {
+                DOM.flacWebview.goBack();
+            }
+        });
+    }
+    if (DOM.flacReload && DOM.flacWebview) {
+        DOM.flacReload.addEventListener('click', () => DOM.flacWebview.reload());
+    }
+    if (DOM.flacWebview) {
+        DOM.flacWebview.addEventListener('dom-ready', () => {
+            DOM.flacLoading?.classList.add('hidden');
+        });
+        DOM.flacWebview.addEventListener('did-start-loading', () => {
+            DOM.flacLoading?.classList.remove('hidden');
+        });
+        DOM.flacWebview.addEventListener('did-stop-loading', () => {
+            DOM.flacLoading?.classList.add('hidden');
+        });
     }
 
     // Home - Paste button
@@ -632,8 +672,9 @@ function switchTab(tabName) {
     if (tabName === 'search' && DOM.searchResults && !DOM.searchResults.children.length) {
         renderSearchEmptyState();
     }
-    // Lista de FLAC cada vez que se entra a la pestaña
+    // Visor FLAC cada vez que se entra a la pestaña
     if (tabName === 'flac') {
+        setupFlacViewer();
         refreshFlacList();
     }
 }
@@ -1150,22 +1191,32 @@ function formatFileSize(bytes) {
     return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`;
 }
 
+/** Activa el visor FLAC embebido (solo escritorio: webview de Electron) */
+function setupFlacViewer() {
+    if (!window.electronAPI || !DOM.flacViewer || !DOM.flacWebview) {
+        // Móvil / navegador: mostrar el botón de abrir fuera
+        DOM.flacHeroMobile?.classList.remove('hidden');
+        return;
+    }
+    // Escritorio: el webview ya está en el DOM; cargar el sitio solo al usarlo
+    if (!DOM.flacWebview.src) {
+        DOM.flacWebview.src = 'https://flacdownloader.com/';
+    }
+    DOM.flacViewer.classList.remove('hidden');
+}
+
 async function handleOpenFlac() {
     if (window.electronAPI?.openFlacView) {
-        // Escritorio: ventana Chromium integrada con organización automática
+        // Escritorio (botón móvil-hero no visible, pero por si acaso)
         try {
             await window.electronAPI.openFlacView();
-            showToast('Buscador FLAC abierto — tus descargas se organizan solas', 'success');
+            showToast('Abierto en ventana aparte', 'info');
         } catch (e) {
             showToast('No se pudo abrir la ventana FLAC', 'error');
         }
     } else {
-        // Móvil / navegador: abrir en pestaña nueva (la descarga va al teléfono)
+        // Móvil / navegador: abrir en pestaña nueva
         window.open('https://flacdownloader.com/', '_blank', 'noopener');
-        showToast(
-            'Se abrió en otra pestaña. Para organizar en la PC, usa la app de escritorio.',
-            'info'
-        );
     }
 }
 

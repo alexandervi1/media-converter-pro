@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:; connect-src 'self' http: https:"
+            content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' https: data:; connect-src 'self' http: https:; frame-src https://flacdownloader.com"
         />
         <title>Media Converter Pro</title>
         <meta name="theme-color" content="#1a1a2e" />
@@ -380,12 +380,52 @@
                 <!-- FLAC TAB (descargas lossless) -->
                 <section class="panel" id="panel-flac">
                     <div class="flac-content">
-                        <div class="flac-hero">
+                        <!-- Visor embebido (solo escritorio; el src se pone al entrar) -->
+                        <div class="flac-viewer hidden" id="flac-viewer">
+                            <div class="flac-toolbar">
+                                <button class="flac-nav-btn" id="flac-back" aria-label="Atrás">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="19" y1="12" x2="5" y2="12" />
+                                        <polyline points="12 19 5 12 12 5" />
+                                    </svg>
+                                </button>
+                                <button class="flac-nav-btn" id="flac-reload" aria-label="Recargar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 4v6h-6" />
+                                        <path d="M1 20v-6h6" />
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                    </svg>
+                                </button>
+                                <span class="flac-url">flacdownloader.com</span>
+                                <button class="flac-nav-btn" id="flac-popout" aria-label="Abrir en ventana aparte">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        <polyline points="15 3 21 3 21 9" />
+                                        <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flac-webview-wrap">
+                                <webview
+                                    id="flac-webview"
+                                    partition="persist:flac"
+                                    allowpopups
+                                ></webview>
+                                <div class="flac-loading" id="flac-loading">
+                                    <div class="spinner"></div>
+                                    <span>Cargando buscador FLAC...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Móvil / navegador: botón para abrir fuera -->
+                        <div class="flac-hero hidden" id="flac-hero-mobile">
                             <h2>Descargas lossless</h2>
                             <p class="drawer-hint">
-                                Abre el buscador de FLAC, descarga como siempre y la app
-                                organiza automáticamente cada archivo en la carpeta
-                                <code>flac</code> de tus descargas.
+                                En el teléfono, abre el buscador en otra pestaña. Los
+                                archivos que descargues desde la app de escritorio
+                                quedan organizados en la carpeta <code>flac</code> y
+                                aparecen aquí.
                             </p>
                             <button class="btn-primary btn-full" id="btn-open-flac">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -393,7 +433,7 @@
                                     <polyline points="15 3 21 3 21 9" />
                                     <line x1="10" y1="14" x2="21" y2="3" />
                                 </svg>
-                                <span>Abrir FLAC Downloader</span>
+                                <span>Abrir en otra pestaña</span>
                             </button>
                         </div>
 
