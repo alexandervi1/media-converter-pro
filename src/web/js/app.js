@@ -130,8 +130,6 @@ function init() {
         defaultFormat: $('default-format'),
         btnOpenFolderSm: $('btn-open-folder-sm'),
         searchFolderPath: $('search-folder-path'),
-        qpToggle: $('qp-toggle'),
-        qpList: $('qp-list'),
 
         // Spotify
         spotifyForm: $('spotify-form'),
@@ -199,7 +197,6 @@ async function loadInitialData() {
             updateDownloadsList();
             updateBadge();
             syncResultCards();
-            renderQueuePanel();
             if (queueData.downloadFolder) {
                 State.downloadFolder = queueData.downloadFolder;
                 updateFolderDisplay();
@@ -499,26 +496,17 @@ function setupEventListeners() {
             }
         });
     }
-    if (DOM.flacBack && DOM.flacWebview) {
+    // Toolbar del visor FLAC (el webview se crea/desstruye por visita; los
+    // handlers resuelven la referencia en el momento del clic)
+    if (DOM.flacBack) {
         DOM.flacBack.addEventListener('click', () => {
-            if (DOM.flacWebview.canGoBack()) {
+            if (DOM.flacWebview?.canGoBack()) {
                 DOM.flacWebview.goBack();
             }
         });
     }
-    if (DOM.flacReload && DOM.flacWebview) {
-        DOM.flacReload.addEventListener('click', () => DOM.flacWebview.reload());
-    }
-    if (DOM.flacWebview) {
-        DOM.flacWebview.addEventListener('dom-ready', () => {
-            DOM.flacLoading?.classList.add('hidden');
-        });
-        DOM.flacWebview.addEventListener('did-start-loading', () => {
-            DOM.flacLoading?.classList.remove('hidden');
-        });
-        DOM.flacWebview.addEventListener('did-stop-loading', () => {
-            DOM.flacLoading?.classList.add('hidden');
-        });
+    if (DOM.flacReload) {
+        DOM.flacReload.addEventListener('click', () => DOM.flacWebview?.reload());
     }
 
     // Home - Paste button
@@ -855,15 +843,17 @@ function switchTab(tabName) {
     });
 
     // Resetear scroll del contenido al cambiar de pestaña (si no, la pestaña
-    // nueva hereda la posición de la anterior y "aparece abajo"). El webview
-    // FLAC no se oculta con display:none: su capa nativa puede pintar en
-    // coordenadas viejas; se aparca fuera de pantalla.
+    // nueva hereda la posición de la anterior y "aparece abajo").
     const contentArea = document.querySelector('.content');
     if (contentArea) {
         contentArea.scrollTop = 0;
     }
-    if (DOM.flacWebview) {
-        DOM.flacWebview.classList.toggle('webview-parked', tabName !== 'flac');
+    // FLAC vive SOLO en su pestaña: al salir se destruye el webview (su capa
+    // nativa jamás pinta en otra vista). Las cookies persisten en la partición
+    // persist:flac, así que el sitio no repite verificaciones.
+    if (tabName !== 'flac' && DOM.flacWebview) {
+        DOM.flacWebview.remove();
+        DOM.flacWebview = null;
     }
 
     // Estado vacío de búsqueda la primera vez que se entra
@@ -894,28 +884,11 @@ function setupQueueListeners() {
         updateDownloadsList();
         updateBadge();
         syncResultCards();
-        renderQueuePanel();
     });
 
     Api.onQueueComplete(() => {
         showToast('¡Todas las descargas han finalizado!', 'success');
     });
-
-    // Panel lateral de cola (escritorio >=1100px)
-    if (DOM.qpToggle) {
-        DOM.qpToggle.addEventListener('click', () => {
-            const collapsed = document.body.classList.toggle('queue-panel-collapsed');
-            localStorage.setItem('mcp_queue_collapsed', collapsed ? '1' : '0');
-            DOM.qpToggle.setAttribute(
-                'aria-label',
-                collapsed ? 'Desplegar panel de descargas' : 'Plegar panel de descargas'
-            );
-        });
-        if (localStorage.getItem('mcp_queue_collapsed') === '1') {
-            document.body.classList.add('queue-panel-collapsed');
-            DOM.qpToggle.setAttribute('aria-label', 'Desplegar panel de descargas');
-        }
-    }
 }
 
 // =========================================
@@ -1107,8 +1080,7 @@ async function handleDownload() {
                 DOM.btnDownload.classList.add('hidden');
             }
             State.activeUrl = null;
-
-            switchTab('downloads');
+            // La cola vive en la pestaña Descargas; aquí el usuario decide
         } else {
             showToast(result.message || 'Error al añadir', 'error');
         }
@@ -1612,7 +1584,7 @@ async function handleResultDownload(card, url, format) {
 
         resultDownloads.set(url, { qid: result.item.id, card });
         await Api.startQueue();
-        switchTab('downloads');
+        // Sin salto: la tarjeta muestra el progreso; la cola vive en Descargas
     } catch (e) {
         console.error('Result download error:', e);
         showToast('Error de conexión', 'error');
@@ -1620,72 +1592,6 @@ async function handleResultDownload(card, url, format) {
 }
 
 /** Sincroniza el progreso de las tarjetas con la cola (vía SSE) */
-/**
- * Panel lateral de cola (>=1100px): descargas activas con progreso y
- * cancelar; completadas con "Mostrar en carpeta". Sin datos: mensaje vacío.
- */
-function renderQueuePanel() {
-    if (!DOM.qpList) {
-        return;
-    }
-    const items = State.downloads || [];
-    const canOpen = State.capabilities.desktopShell === true;
-
-    if (items.length === 0) {
-        DOM.qpList.innerHTML =
-            '<p class="qp-empty">Sin descargas. Lo que descargues aparece aquí en vivo.</p>';
-        return;
-    }
-
-    DOM.qpList.innerHTML = items
-        .map((item) => {
-            const active =
-                item.status === 'pending' ||
-                item.status === 'downloading' ||
-                item.status === 'converting' ||
-                item.status === 'searching';
-            const pct = item.progress || 0;
-            const extra = [item.speed, item.eta].filter(Boolean).join(' · ');
-            return `
-            <div class="qp-item" data-id="${item.id}">
-                <img class="qp-thumb" src="${item.thumbnail || ''}" alt="" loading="lazy" />
-                <div class="qp-info">
-                    <p class="qp-title">${escapeHtml(item.title || 'Descarga')}</p>
-                    ${
-    active
-        ? `
-                    <div class="qp-progress"><div class="qp-fill" style="width: ${pct}%"></div></div>
-                    <p class="qp-status">${escapeHtml(getStatusText(item))}</p>
-                    `
-        : item.status === 'completed'
-            ? '<p class="qp-status done">✓ Guardado</p>'
-            : `<p class="qp-status error">${escapeHtml(item.error || 'Error')}</p>`
-}
-                </div>
-                <div class="qp-actions">
-                    ${
-    active
-        ? `<button type="button" class="qp-btn qp-cancel" data-id="${item.id}" aria-label="Cancelar descarga">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>`
-        : item.status === 'completed' && canOpen && item.filePath
-            ? `<button type="button" class="qp-btn qp-open" data-path="${escapeHtml(item.filePath)}" aria-label="Mostrar en carpeta">Carpeta</button>`
-            : ''
-}
-                </div>
-            </div>
-        `;
-        })
-        .join('');
-
-    DOM.qpList.querySelectorAll('.qp-cancel').forEach((btn) => {
-        btn.addEventListener('click', () => Api.removeFromQueue(Number(btn.dataset.id)));
-    });
-    DOM.qpList.querySelectorAll('.qp-open').forEach((btn) => {
-        btn.addEventListener('click', () => Api.openPath(btn.dataset.path));
-    });
-}
-
 function syncResultCards() {
     for (const [url, entry] of resultDownloads) {
         if (!document.body.contains(entry.card)) {
@@ -1734,16 +1640,38 @@ function syncResultCards() {
 // FLAC Handlers (visor lossless embebido)
 // =========================================
 
-/** Activa el visor FLAC embebido (solo escritorio: webview de Electron) */
+/**
+ * Activa el visor FLAC embebido (solo escritorio: webview de Electron).
+ * El webview se CREA al entrar en la pestaña y se DESTRUYE al salir
+ * (switchTab): su capa nativa jamás aparece en otra vista. Las cookies
+ * persisten en la partición persist:flac entre visitas.
+ */
 function setupFlacViewer() {
-    if (!window.electronAPI || !DOM.flacViewer || !DOM.flacWebview) {
+    if (!window.electronAPI || !DOM.flacViewer) {
         // Móvil / navegador: mostrar el botón de abrir fuera
         DOM.flacHeroMobile?.classList.remove('hidden');
         return;
     }
-    // Escritorio: el webview ya está en el DOM; cargar el sitio solo al usarlo
-    if (!DOM.flacWebview.src) {
-        DOM.flacWebview.src = 'https://flacdownloader.com/';
+
+    if (!DOM.flacWebview || !DOM.flacWebview.isConnected) {
+        const wrap = document.getElementById('flac-webview-wrap');
+        const wv = document.createElement('webview');
+        wv.id = 'flac-webview';
+        wv.partition = 'persist:flac';
+        wv.setAttribute('allowpopups', '');
+        wv.src = 'https://flacdownloader.com/';
+
+        wv.addEventListener('dom-ready', () => DOM.flacLoading?.classList.add('hidden'));
+        wv.addEventListener('did-start-loading', () =>
+            DOM.flacLoading?.classList.remove('hidden')
+        );
+        wv.addEventListener('did-stop-loading', () =>
+            DOM.flacLoading?.classList.add('hidden')
+        );
+
+        wrap.prepend(wv);
+        DOM.flacWebview = wv;
+        DOM.flacLoading?.classList.remove('hidden');
     }
     DOM.flacViewer.classList.remove('hidden');
 }
@@ -1917,8 +1845,7 @@ async function handleDownloadSpotifyPlaylist() {
             if (DOM.btnDownloadPlaylist) {
                 DOM.btnDownloadPlaylist.classList.add('hidden');
             }
-
-            switchTab('downloads');
+            // La cola se sigue en la pestaña Descargas (badge visible)
         } else {
             showToast(result.message || 'Error al añadir canciones', 'error');
         }

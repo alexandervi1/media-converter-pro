@@ -407,20 +407,6 @@
                         <!-- Resultados: vacío / skeletons / resultados / sin resultados -->
                         <p class="results-header" id="results-header" aria-live="polite"></p>
                         <div class="search-results" id="search-results" aria-live="polite"></div>
-                        </div>
-
-                        <!-- Panel lateral de cola de descargas (>=1100px, colapsable) -->
-                        <aside class="queue-panel" id="queue-panel" aria-label="Cola de descargas">
-                            <div class="qp-header">
-                                <h3 class="qp-title">Descargas</h3>
-                                <button type="button" class="qp-toggle" id="qp-toggle" aria-label="Plegar panel de descargas">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                        <polyline points="9 18 15 12 9 6" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="qp-list" id="qp-list" aria-live="polite"></div>
-                        </aside>
                     </div>
                 </section>
 
@@ -532,13 +518,10 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div class="flac-webview-wrap">
-                                <webview
-                                    id="flac-webview"
-                                    partition="persist:flac"
-                                    allowpopups
-                                ></webview>
-                                <div class="flac-loading" id="flac-loading">
+                            <div class="flac-webview-wrap" id="flac-webview-wrap">
+                                <!-- El webview se crea al entrar a la pestaña y se
+                                     destruye al salir: jamás pinta en otra vista -->
+                                <div class="flac-loading hidden" id="flac-loading">
                                     <div class="spinner"></div>
                                     <span>Cargando buscador FLAC...</span>
                                 </div>
