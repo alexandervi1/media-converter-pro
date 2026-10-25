@@ -52,6 +52,7 @@ function init() {
         drawerOverlay: $('drawer-overlay'),
         btnCloseDrawer: $('btn-close-drawer'),
         btnMinimize: $('btn-minimize'),
+        btnMaximize: $('btn-maximize'),
         btnClose: $('btn-close'),
         selectCookies: $('select-cookies'),
 
@@ -387,6 +388,25 @@ function setupEventListeners() {
     // Window controls (solo escritorio)
     if (DOM.btnMinimize && window.electronAPI?.minimizeWindow) {
         DOM.btnMinimize.addEventListener('click', () => window.electronAPI.minimizeWindow());
+    }
+    if (DOM.btnMaximize && window.electronAPI?.maximizeWindow) {
+        DOM.btnMaximize.addEventListener('click', async () => {
+            try {
+                const res = await window.electronAPI.maximizeWindow();
+                document.body.classList.toggle('maximized', !!res?.maximized);
+            } catch (e) {
+                /* el estado llega igual por el evento */
+            }
+        });
+        // El icono debe reflejar el estado real (doble clic en la barra, etc.)
+        if (window.electronAPI.onWindowMaximized) {
+            window.electronAPI.onWindowMaximized((maximized) => {
+                document.body.classList.toggle('maximized', !!maximized);
+                if (DOM.btnMaximize) {
+                    DOM.btnMaximize.title = maximized ? 'Restaurar' : 'Maximizar';
+                }
+            });
+        }
     }
     if (DOM.btnClose && window.electronAPI?.closeWindow) {
         DOM.btnClose.addEventListener('click', () => window.electronAPI.closeWindow());

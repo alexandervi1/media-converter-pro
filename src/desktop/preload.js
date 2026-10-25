@@ -9,7 +9,10 @@ const { contextBridge, ipcRenderer, clipboard } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
     // Controles de ventana (titlebar custom)
     minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+    maximizeWindow: () => ipcRenderer.invoke('window:maximize-toggle'),
     closeWindow: () => ipcRenderer.invoke('window:close'),
+    onWindowMaximized: (callback) =>
+        ipcRenderer.on('window:maximized', (_, maximized) => callback(maximized)),
 
     // Portapapeles (fallback si el navegador lo restringe)
     readClipboard: () => clipboard.readText(),

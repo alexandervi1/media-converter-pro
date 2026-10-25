@@ -71,12 +71,21 @@
                             />
                         </svg>
                     </button>
-                    <button class="titlebar-btn" id="btn-minimize" title="Minimizar">
+                    <button class="titlebar-btn" id="btn-minimize" title="Minimizar" aria-label="Minimizar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                     </button>
-                    <button class="titlebar-btn close" id="btn-close" title="Cerrar">
+                    <button class="titlebar-btn" id="btn-maximize" title="Maximizar" aria-label="Maximizar">
+                        <svg class="icon-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="5" width="14" height="14" rx="1" ry="1" />
+                        </svg>
+                        <svg class="icon-restore" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="8" width="12" height="12" rx="1" ry="1" />
+                            <polyline points="8 4 20 4 20 16" />
+                        </svg>
+                    </button>
+                    <button class="titlebar-btn close" id="btn-close" title="Cerrar" aria-label="Cerrar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="6" y1="6" x2="18" y2="18" />
                             <line x1="6" y1="18" x2="18" y2="6" />

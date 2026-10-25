@@ -292,6 +292,19 @@ body {
     position: relative;
 }
 
+/* Icono maximizar/restaurar */
+#btn-maximize .icon-restore {
+    display: none;
+}
+
+body.maximized #btn-maximize .icon-max {
+    display: none;
+}
+
+body.maximized #btn-maximize .icon-restore {
+    display: block;
+}
+
 /* =========================================
    Title Bar con Menú Hamburguesa
    ========================================= */
@@ -611,7 +624,6 @@ body {
 
 .tab.active {
     color: var(--primary);
-    border-bottom-color: var(--primary);
 }
 
 .tab-badge {
@@ -1443,11 +1455,12 @@ body {
    Responsive Design
    ========================================= */
 @media (min-width: 601px) {
+    /* Escritorio: fluido para aprovechar ventanas maximizadas.
+       El contenido interno se centra con márgenes cómodos. */
     .app {
-        max-width: 780px;
-        margin: 0 auto;
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
+        max-width: none;
+        margin: 0;
+        border: none;
     }
 }
 
@@ -1652,6 +1665,7 @@ body {
 
 /* El body recibe .web cuando NO corre dentro de Electron */
 body.web #btn-minimize,
+body.web #btn-maximize,
 body.web #btn-close {
     display: none;
 }
@@ -2727,3 +2741,49 @@ webview {
     display: none;
 }
 
+
+/* =========================================
+   Escritorio ancho (≥901px): fluido + 2 columnas.
+   Al final del archivo para ganar a las reglas base.
+   ========================================= */
+@media (min-width: 901px) {
+    .app {
+        max-width: none;
+    }
+
+    .content {
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .search-results,
+    .downloads-list,
+    .track-list,
+    .flac-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: var(--space-sm);
+    }
+
+    .search-results {
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .downloads-list {
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .flac-webview-wrap {
+        height: min(66vh, 640px);
+    }
+
+    .home-content {
+        max-width: 680px;
+        margin: 0 auto;
+        width: 100%;
+    }
+}

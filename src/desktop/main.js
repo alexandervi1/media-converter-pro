@@ -124,6 +124,15 @@ function createMainWindow(url) {
         logger.info('Ventana principal visible');
     });
 
+    // Notificar a la UI el estado de maximizado (icono maximizar/restaurar)
+    const sendMaximized = () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('window:maximized', mainWindow.isMaximized());
+        }
+    };
+    mainWindow.on('maximize', sendMaximized);
+    mainWindow.on('unmaximize', sendMaximized);
+
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
@@ -163,6 +172,19 @@ function registerDesktopIpc() {
 
     ipcMain.handle('window:close', () => {
         mainWindow?.close();
+    });
+
+    // Alternar maximizado y devolver el nuevo estado (para el icono)
+    ipcMain.handle('window:maximize-toggle', () => {
+        if (!mainWindow) {
+            return { maximized: false };
+        }
+        if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize();
+        } else {
+            mainWindow.maximize();
+        }
+        return { maximized: mainWindow.isMaximized() };
     });
 
     ipcMain.handle('app:get-lan', () => getLanInfo());
