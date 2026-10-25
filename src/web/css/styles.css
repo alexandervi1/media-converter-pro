@@ -3547,3 +3547,147 @@ webview {
         justify-content: center;
     }
 }
+
+/* =========================================
+   Refinamiento tabla de resultados (puntos 1-11)
+   ========================================= */
+
+/* Encabezado de resultados */
+.results-header {
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-height: 1.2em;
+    margin-bottom: var(--space-xs);
+}
+
+/* Contraste de texto secundario (>= 4.5:1 sobre el fondo) */
+.search-folder-path {
+    color: var(--text-secondary);
+}
+
+.qp-empty {
+    color: var(--text-secondary);
+}
+
+/* Aparcado del webview FLAC: fuera de pantalla, no display:none.
+   display:none en la capa nativa provoca restos de pintura en Electron. */
+webview.webview-parked {
+    position: fixed;
+    left: -200vw;
+    top: 0;
+    width: 1280px;
+    height: 800px;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* La pestaña superior nunca debe verse donde existe el sidebar */
+@media (min-width: 1100px) {
+    .tabs {
+        display: none !important;
+    }
+
+    /* Plantilla de columnas COMPARTIDA por todas las filas:
+       miniatura 64 | título+artista 1fr | duración 64 | formato 130 | botón 48 */
+    .result-card {
+        grid-template-columns: 64px minmax(0, 1fr) 64px 130px 48px;
+        column-gap: 16px;
+        padding: 12px;
+        min-height: 72px;
+        border: 1px solid transparent;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Estados de fila */
+    .result-card:hover {
+        background: var(--surface-hover);
+    }
+
+    .result-card:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--surface-hover);
+    }
+
+    /* Título a 1 línea, artista en segunda línea atenuado */
+    .result-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .result-meta {
+        color: var(--text-secondary);
+    }
+
+    /* Duración (columna propia) */
+    .rc-duration {
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rc-duration.empty {
+        color: var(--text-secondary);
+        opacity: 0.85;
+    }
+
+    /* Selector único de formato/calidad (130px) */
+    .rc-format-select {
+        width: 130px;
+        padding: 9px 10px;
+        background: var(--surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    /* Botón de descarga: secundario/icono; azul solo con la fila activa */
+    .rc-download-btn {
+        width: 40px;
+        height: 40px;
+        justify-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .rc-download-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .rc-download-btn:hover {
+        color: var(--text-primary);
+        border-color: var(--border-hover);
+    }
+
+    .result-card:hover .rc-download-btn,
+    .result-card:focus-visible .rc-download-btn {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+}
+
+/* Las acciones de tabla ocupan explícitamente las dos últimas columnas */
+@media (min-width: 1100px) {
+    .rc-table-actions {
+        grid-column: 4 / -1;
+        justify-content: space-between;
+    }
+}

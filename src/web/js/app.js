@@ -122,6 +122,7 @@ function init() {
         searchClear: $('btn-search-clear'),
         searchAutocomplete: $('search-autocomplete'),
         searchResults: $('search-results'),
+        resultsHeader: $('results-header'),
         searchFilters: $('search-filters'),
         linkHint: $('link-hint'),
         btnHintSearch: $('btn-hint-search'),
@@ -716,6 +717,25 @@ function setupEventListeners() {
         });
     }
 
+    // Navegación con flechas entre filas de resultados (accesibilidad)
+    if (DOM.searchResults) {
+        DOM.searchResults.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') {
+                return;
+            }
+            const cards = Array.from(DOM.searchResults.querySelectorAll('.result-card'));
+            const current = cards.indexOf(document.activeElement);
+            if (current === -1) {
+                return;
+            }
+            e.preventDefault();
+            const next = e.key === 'ArrowDown' ? current + 1 : current - 1;
+            if (next >= 0 && next < cards.length) {
+                cards[next].focus();
+            }
+        });
+    }
+
     // Spotify - submit (botón + tecla Go del teclado móvil)
     if (DOM.spotifyForm) {
         DOM.spotifyForm.addEventListener('submit', (e) => {
@@ -835,14 +855,15 @@ function switchTab(tabName) {
     });
 
     // Resetear scroll del contenido al cambiar de pestaña (si no, la pestaña
-    // nueva hereda la posición de la anterior y "aparece abajo") y ocultar
-    // la capa nativa del webview FLAC cuando no es la pestaña activa.
+    // nueva hereda la posición de la anterior y "aparece abajo"). El webview
+    // FLAC no se oculta con display:none: su capa nativa puede pintar en
+    // coordenadas viejas; se aparca fuera de pantalla.
     const contentArea = document.querySelector('.content');
     if (contentArea) {
         contentArea.scrollTop = 0;
     }
     if (DOM.flacWebview) {
-        DOM.flacWebview.style.display = tabName === 'flac' ? '' : 'none';
+        DOM.flacWebview.classList.toggle('webview-parked', tabName !== 'flac');
     }
 
     // Estado vacío de búsqueda la primera vez que se entra
@@ -1294,6 +1315,9 @@ function renderSearchEmptyState() {
     if (!DOM.searchResults) {
         return;
     }
+    if (DOM.resultsHeader) {
+        DOM.resultsHeader.textContent = '';
+    }
     const recents = getRecentSearches();
     const recentDownloads = (State.downloads || [])
         .filter((d) => d.status === 'completed')
@@ -1447,6 +1471,11 @@ async function handleSearch(query) {
         return;
     }
 
+    // Encabezado de resultados (solo texto, sin lógica)
+    if (DOM.resultsHeader) {
+        DOM.resultsHeader.textContent = `Buscando “${query}”...`;
+    }
+
     // Skeleton mientras busca (mismo layout que las tarjetas de resultado)
     DOM.searchResults.innerHTML = Array.from({ length: 3 })
         .map(
@@ -1468,6 +1497,9 @@ async function handleSearch(query) {
         const results = response?.results || [];
 
         if (!results || results.length === 0) {
+            if (DOM.resultsHeader) {
+                DOM.resultsHeader.textContent = `0 resultados para “${query}”`;
+            }
             DOM.searchResults.innerHTML = `
                 <div class="no-results">
                     No encontramos nada con "${escapeHtml(query)}".<br />
@@ -1477,10 +1509,16 @@ async function handleSearch(query) {
             return;
         }
 
+        if (DOM.resultsHeader) {
+            DOM.resultsHeader.textContent = `${results.length} resultados para “${query}”`;
+        }
         saveRecentSearch(query);
         renderResultCards(results);
     } catch (e) {
         console.error('Search error:', e);
+        if (DOM.resultsHeader) {
+            DOM.resultsHeader.textContent = '';
+        }
         DOM.searchResults.innerHTML =
             '<div class="no-results">No se pudo completar la búsqueda. Revisa la conexión con el servidor.</div>';
     }
@@ -1488,21 +1526,20 @@ async function handleSearch(query) {
 
 function renderResultCards(results) {
     const primary = State.defaultFormat || 'mp3';
-    const QUALITY_LABELS = { mp3: 'MP3 320k', m4a: 'M4A', mp4: 'MP4 1080p' };
     DOM.searchResults.innerHTML = results
         .map((item) => {
             const url = item.url || item.webpage_url || '';
             const artist = item.cleanArtist || item.uploader || item.channel || '';
-            const duration = formatDuration(item.duration);
+            const duration = formatDuration(item.duration) || '--:--';
             return `
             <div class="result-card" data-url="${escapeHtml(url)}" tabindex="0">
                 <div class="result-thumb-wrap">
                     <img src="${item.thumbnail || ''}" alt="" class="result-thumb" loading="lazy" />
-                    ${duration ? `<span class="result-duration">${duration}</span>` : ''}
+                    ${duration !== '--:--' ? `<span class="result-duration">${duration}</span>` : ''}
                 </div>
                 <div class="result-info">
                     <p class="result-title">${escapeHtml(item.cleanTitle || item.title)}</p>
-                    <p class="result-meta">${escapeHtml(artist)} · YouTube</p>
+                    <p class="result-meta">${escapeHtml(artist)}</p>
                     <div class="result-actions">
                         <button type="button" class="result-format-btn${primary === 'mp3' ? ' primary' : ''}" data-format="mp3" aria-label="Descargar MP3 320k">MP3</button>
                         <button type="button" class="result-format-btn${primary === 'm4a' ? ' primary' : ''}" data-format="m4a" aria-label="Descargar M4A">M4A</button>
@@ -1513,16 +1550,20 @@ function renderResultCards(results) {
                         <p class="result-progress-label"></p>
                     </div>
                 </div>
-                <span class="rc-source">YouTube</span>
-                <span class="rc-duration">${duration || '—'}</span>
-                <span class="rc-quality">${QUALITY_LABELS[primary] || 'MP3 320k'}</span>
+                <span class="rc-duration${duration === '--:--' ? ' empty' : ''}">${duration}</span>
                 <div class="rc-table-actions">
                     <select class="rc-format-select" aria-label="Formato de descarga">
-                        <option value="mp3"${primary === 'mp3' ? ' selected' : ''}>MP3</option>
+                        <option value="mp3"${primary === 'mp3' ? ' selected' : ''}>MP3 320k</option>
                         <option value="m4a"${primary === 'm4a' ? ' selected' : ''}>M4A</option>
-                        <option value="mp4"${primary === 'mp4' ? ' selected' : ''}>MP4</option>
+                        <option value="mp4"${primary === 'mp4' ? ' selected' : ''}>MP4 1080p</option>
                     </select>
-                    <button type="button" class="rc-download-btn" aria-label="Descargar">Descargar</button>
+                    <button type="button" class="rc-download-btn" title="Descargar" aria-label="Descargar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
