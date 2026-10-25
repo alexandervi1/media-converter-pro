@@ -129,6 +129,8 @@ function init() {
         defaultFormat: $('default-format'),
         btnOpenFolderSm: $('btn-open-folder-sm'),
         searchFolderPath: $('search-folder-path'),
+        qpToggle: $('qp-toggle'),
+        qpList: $('qp-list'),
 
         // Spotify
         spotifyForm: $('spotify-form'),
@@ -195,6 +197,8 @@ async function loadInitialData() {
             State.downloads = queueData.queue || [];
             updateDownloadsList();
             updateBadge();
+            syncResultCards();
+            renderQueuePanel();
             if (queueData.downloadFolder) {
                 State.downloadFolder = queueData.downloadFolder;
                 updateFolderDisplay();
@@ -595,24 +599,30 @@ function setupEventListeners() {
         });
         // Navegación del autocompletado con flechas y Enter
         DOM.searchInput.addEventListener('keydown', (e) => {
-            if (!DOM.searchAutocomplete || DOM.searchAutocomplete.classList.contains('hidden')) {
-                return;
-            }
-            const items = DOM.searchAutocomplete.querySelectorAll('.ac-item');
-            if (!items.length) {
-                return;
-            }
-            if (e.key === 'ArrowDown') {
+            const ac = DOM.searchAutocomplete;
+            const acOpen = ac && !ac.classList.contains('hidden');
+            const items = acOpen ? ac.querySelectorAll('.ac-item') : [];
+
+            if (e.key === 'ArrowDown' && items.length) {
                 e.preventDefault();
                 acIndex = (acIndex + 1) % items.length;
                 paintAutocomplete();
-            } else if (e.key === 'ArrowUp') {
+            } else if (e.key === 'ArrowUp' && items.length) {
                 e.preventDefault();
                 acIndex = (acIndex - 1 + items.length) % items.length;
                 paintAutocomplete();
-            } else if (e.key === 'Enter' && acIndex >= 0) {
+            } else if (e.key === 'Enter' && acOpen && acIndex >= 0) {
                 e.preventDefault();
                 acceptAutocomplete(items[acIndex].dataset.query);
+            } else if (e.key === 'Enter') {
+                // Sumisión explícita: no depender de la implícita del formulario
+                e.preventDefault();
+                hideAutocomplete();
+                const query = DOM.searchInput.value.trim();
+                if (query) {
+                    handleSearch(query);
+                    DOM.searchInput.blur();
+                }
             }
         });
         DOM.searchInput.addEventListener('blur', () => {
@@ -824,6 +834,17 @@ function switchTab(tabName) {
         }
     });
 
+    // Resetear scroll del contenido al cambiar de pestaña (si no, la pestaña
+    // nueva hereda la posición de la anterior y "aparece abajo") y ocultar
+    // la capa nativa del webview FLAC cuando no es la pestaña activa.
+    const contentArea = document.querySelector('.content');
+    if (contentArea) {
+        contentArea.scrollTop = 0;
+    }
+    if (DOM.flacWebview) {
+        DOM.flacWebview.style.display = tabName === 'flac' ? '' : 'none';
+    }
+
     // Estado vacío de búsqueda la primera vez que se entra
     if (tabName === 'search' && DOM.searchResults && !DOM.searchResults.children.length) {
         renderSearchEmptyState();
@@ -852,11 +873,28 @@ function setupQueueListeners() {
         updateDownloadsList();
         updateBadge();
         syncResultCards();
+        renderQueuePanel();
     });
 
     Api.onQueueComplete(() => {
         showToast('¡Todas las descargas han finalizado!', 'success');
     });
+
+    // Panel lateral de cola (escritorio >=1100px)
+    if (DOM.qpToggle) {
+        DOM.qpToggle.addEventListener('click', () => {
+            const collapsed = document.body.classList.toggle('queue-panel-collapsed');
+            localStorage.setItem('mcp_queue_collapsed', collapsed ? '1' : '0');
+            DOM.qpToggle.setAttribute(
+                'aria-label',
+                collapsed ? 'Desplegar panel de descargas' : 'Plegar panel de descargas'
+            );
+        });
+        if (localStorage.getItem('mcp_queue_collapsed') === '1') {
+            document.body.classList.add('queue-panel-collapsed');
+            DOM.qpToggle.setAttribute('aria-label', 'Desplegar panel de descargas');
+        }
+    }
 }
 
 // =========================================
@@ -1450,13 +1488,14 @@ async function handleSearch(query) {
 
 function renderResultCards(results) {
     const primary = State.defaultFormat || 'mp3';
+    const QUALITY_LABELS = { mp3: 'MP3 320k', m4a: 'M4A', mp4: 'MP4 1080p' };
     DOM.searchResults.innerHTML = results
         .map((item) => {
             const url = item.url || item.webpage_url || '';
             const artist = item.cleanArtist || item.uploader || item.channel || '';
             const duration = formatDuration(item.duration);
             return `
-            <div class="result-card" data-url="${escapeHtml(url)}">
+            <div class="result-card" data-url="${escapeHtml(url)}" tabindex="0">
                 <div class="result-thumb-wrap">
                     <img src="${item.thumbnail || ''}" alt="" class="result-thumb" loading="lazy" />
                     ${duration ? `<span class="result-duration">${duration}</span>` : ''}
@@ -1474,6 +1513,17 @@ function renderResultCards(results) {
                         <p class="result-progress-label"></p>
                     </div>
                 </div>
+                <span class="rc-source">YouTube</span>
+                <span class="rc-duration">${duration || '—'}</span>
+                <span class="rc-quality">${QUALITY_LABELS[primary] || 'MP3 320k'}</span>
+                <div class="rc-table-actions">
+                    <select class="rc-format-select" aria-label="Formato de descarga">
+                        <option value="mp3"${primary === 'mp3' ? ' selected' : ''}>MP3</option>
+                        <option value="m4a"${primary === 'm4a' ? ' selected' : ''}>M4A</option>
+                        <option value="mp4"${primary === 'mp4' ? ' selected' : ''}>MP4</option>
+                    </select>
+                    <button type="button" class="rc-download-btn" aria-label="Descargar">Descargar</button>
+                </div>
             </div>
         `;
         })
@@ -1483,6 +1533,19 @@ function renderResultCards(results) {
         const url = card.dataset.url;
         card.querySelectorAll('.result-format-btn').forEach((btn) => {
             btn.addEventListener('click', () => handleResultDownload(card, url, btn.dataset.format));
+        });
+        // Acciones de tabla (>=1100px): selector + botón único
+        const dlBtn = card.querySelector('.rc-download-btn');
+        const fmtSelect = card.querySelector('.rc-format-select');
+        dlBtn?.addEventListener('click', () => {
+            handleResultDownload(card, url, fmtSelect?.value || State.defaultFormat);
+        });
+        // Navegación por teclado entre filas: Enter descarga con el formato elegido
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target === card) {
+                e.preventDefault();
+                handleResultDownload(card, url, fmtSelect?.value || State.defaultFormat);
+            }
         });
     });
 }
@@ -1516,6 +1579,72 @@ async function handleResultDownload(card, url, format) {
 }
 
 /** Sincroniza el progreso de las tarjetas con la cola (vía SSE) */
+/**
+ * Panel lateral de cola (>=1100px): descargas activas con progreso y
+ * cancelar; completadas con "Mostrar en carpeta". Sin datos: mensaje vacío.
+ */
+function renderQueuePanel() {
+    if (!DOM.qpList) {
+        return;
+    }
+    const items = State.downloads || [];
+    const canOpen = State.capabilities.desktopShell === true;
+
+    if (items.length === 0) {
+        DOM.qpList.innerHTML =
+            '<p class="qp-empty">Sin descargas. Lo que descargues aparece aquí en vivo.</p>';
+        return;
+    }
+
+    DOM.qpList.innerHTML = items
+        .map((item) => {
+            const active =
+                item.status === 'pending' ||
+                item.status === 'downloading' ||
+                item.status === 'converting' ||
+                item.status === 'searching';
+            const pct = item.progress || 0;
+            const extra = [item.speed, item.eta].filter(Boolean).join(' · ');
+            return `
+            <div class="qp-item" data-id="${item.id}">
+                <img class="qp-thumb" src="${item.thumbnail || ''}" alt="" loading="lazy" />
+                <div class="qp-info">
+                    <p class="qp-title">${escapeHtml(item.title || 'Descarga')}</p>
+                    ${
+    active
+        ? `
+                    <div class="qp-progress"><div class="qp-fill" style="width: ${pct}%"></div></div>
+                    <p class="qp-status">${escapeHtml(getStatusText(item))}</p>
+                    `
+        : item.status === 'completed'
+            ? '<p class="qp-status done">✓ Guardado</p>'
+            : `<p class="qp-status error">${escapeHtml(item.error || 'Error')}</p>`
+}
+                </div>
+                <div class="qp-actions">
+                    ${
+    active
+        ? `<button type="button" class="qp-btn qp-cancel" data-id="${item.id}" aria-label="Cancelar descarga">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>`
+        : item.status === 'completed' && canOpen && item.filePath
+            ? `<button type="button" class="qp-btn qp-open" data-path="${escapeHtml(item.filePath)}" aria-label="Mostrar en carpeta">Carpeta</button>`
+            : ''
+}
+                </div>
+            </div>
+        `;
+        })
+        .join('');
+
+    DOM.qpList.querySelectorAll('.qp-cancel').forEach((btn) => {
+        btn.addEventListener('click', () => Api.removeFromQueue(Number(btn.dataset.id)));
+    });
+    DOM.qpList.querySelectorAll('.qp-open').forEach((btn) => {
+        btn.addEventListener('click', () => Api.openPath(btn.dataset.path));
+    });
+}
+
 function syncResultCards() {
     for (const [url, entry] of resultDownloads) {
         if (!document.body.contains(entry.card)) {

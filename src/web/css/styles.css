@@ -2705,7 +2705,7 @@ webview {
     }
 
     .content {
-        max-width: 1000px;
+        max-width: 1240px;
         width: 100%;
         margin: 0 auto;
     }
@@ -3206,4 +3206,344 @@ webview {
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
+}
+
+/* =========================================
+   Fase C — tabla de resultados y cola lateral (>=1100px)
+   ========================================= */
+
+/* Columnas de tabla: ocultas por debajo de 1100px */
+.rc-source,
+.rc-duration,
+.rc-quality,
+.rc-table-actions {
+    display: none;
+}
+
+/* Panel de cola: base oculto (móvil/tablet usan la pestaña Descargas) */
+.queue-panel {
+    display: none;
+}
+
+@media (min-width: 1100px) {
+    /* Buscar: contenido principal + cola lateral de 320px */
+    .search-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: start;
+        gap: var(--space-lg);
+    }
+
+    body.queue-panel-collapsed .search-content {
+        grid-template-columns: minmax(0, 1fr) 44px;
+    }
+
+    .search-main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+
+    /* Los resultados pasan de grid 2-col a lista tipo tabla */
+    .search-results {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .result-card {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) 66px 44px 78px auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 72px;
+        padding: 8px 10px;
+        border-radius: 12px;
+    }
+
+    .result-card:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        background: var(--surface-hover);
+    }
+
+    .result-thumb-wrap {
+        width: 64px;
+        height: 64px;
+    }
+
+    /* La duración pasa de la miniatura a su propia columna */
+    .result-duration {
+        display: none;
+    }
+
+    .result-info {
+        gap: 2px;
+    }
+
+    .result-title {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .result-actions {
+        display: none; /* en tabla: selector + botón único */
+    }
+
+    .rc-source,
+    .rc-duration,
+    .rc-quality {
+        display: block;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .rc-quality {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .rc-table-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .rc-format-select {
+        width: 84px;
+        padding: 8px 8px;
+        background: var(--surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .rc-download-btn {
+        min-height: 36px;
+        padding: 0 14px;
+        background: var(--primary);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .rc-download-btn:active {
+        transform: scale(0.96);
+    }
+
+    /* El progreso inline ocupa toda la fila */
+    .result-card .result-progress {
+        grid-column: 1 / -1;
+    }
+
+    /* --- Panel de cola --- */
+    .queue-panel {
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        max-height: calc(100vh - 140px);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .qp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-sm) var(--space-md);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .qp-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .qp-toggle {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+
+    .qp-toggle:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+    }
+
+    .qp-toggle svg {
+        width: 18px;
+        height: 18px;
+        transition: transform 0.15s ease;
+    }
+
+    body.queue-panel-collapsed .qp-toggle svg {
+        transform: rotate(180deg);
+    }
+
+    .qp-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--space-sm);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .qp-empty {
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        padding: var(--space-sm);
+    }
+
+    .qp-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: var(--space-sm);
+        background: var(--surface-hover);
+        border-radius: 12px;
+    }
+
+    .qp-thumb {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+        background: var(--bg-secondary);
+    }
+
+    .qp-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .qp-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+    }
+
+    .qp-progress {
+        height: 3px;
+        background: var(--border);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-bottom: 4px;
+    }
+
+    .qp-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: var(--radius-full);
+        transition: width 0.25s ease;
+    }
+
+    .qp-status {
+        font-size: 11px;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .qp-status.done {
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    .qp-status.error {
+        color: var(--error);
+    }
+
+    .qp-actions {
+        flex-shrink: 0;
+    }
+
+    .qp-btn {
+        min-width: 34px;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    .qp-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .qp-btn:hover {
+        color: var(--text-primary);
+        background: var(--surface-active);
+    }
+
+    .qp-cancel:hover {
+        color: var(--error);
+        border-color: var(--error);
+    }
+
+    .qp-open {
+        padding: 0 10px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--primary);
+        border: none;
+    }
+
+    /* Colapsado: solo la cabecera con el chevron */
+    body.queue-panel-collapsed .queue-panel {
+        max-height: 52px;
+    }
+
+    body.queue-panel-collapsed .qp-list {
+        display: none;
+    }
+
+    body.queue-panel-collapsed .qp-header {
+        border-bottom: none;
+    }
+
+    body.queue-panel-collapsed .qp-title {
+        visibility: hidden;
+    }
+
+    body.queue-panel-collapsed .qp-header {
+        justify-content: center;
+    }
 }

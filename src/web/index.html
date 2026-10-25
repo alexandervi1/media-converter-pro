@@ -298,6 +298,7 @@
                 <!-- SEARCH TAB (Buscador Avanzado, mobile-first) -->
                 <section class="panel" id="panel-search">
                     <div class="search-content">
+                        <div class="search-main">
                         <!-- Buscador: icono dentro del input + botón de borrar -->
                         <form role="search" class="search-form" id="search-form">
                             <div class="search-field">
@@ -405,6 +406,20 @@
 
                         <!-- Resultados: vacío / skeletons / resultados / sin resultados -->
                         <div class="search-results" id="search-results" aria-live="polite"></div>
+                        </div>
+
+                        <!-- Panel lateral de cola de descargas (>=1100px, colapsable) -->
+                        <aside class="queue-panel" id="queue-panel" aria-label="Cola de descargas">
+                            <div class="qp-header">
+                                <h3 class="qp-title">Descargas</h3>
+                                <button type="button" class="qp-toggle" id="qp-toggle" aria-label="Plegar panel de descargas">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <polyline points="9 18 15 12 9 6" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="qp-list" id="qp-list" aria-live="polite"></div>
+                        </aside>
                     </div>
                 </section>
 
