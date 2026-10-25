@@ -2940,7 +2940,9 @@ webview {
         padding: 0;
     }
 
+    /* display:none (no opacity): la etiqueta con flex:1 seguía ocupando
+       espacio y descentraba el icono en modo colapsado */
     body.sidebar-collapsed .side-label {
-        opacity: 0;
+        display: none;
     }
 }
