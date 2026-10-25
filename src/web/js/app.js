@@ -97,7 +97,6 @@ function init() {
         flacReload: $('flac-reload'),
         flacPopout: $('flac-popout'),
         btnOpenFlac: $('btn-open-flac'),
-        flacList: $('flac-list'),
 
         // Home
         urlInput: $('url-input'),
@@ -724,7 +723,6 @@ function switchTab(tabName) {
     // Visor FLAC cada vez que se entra a la pestaña
     if (tabName === 'flac') {
         setupFlacViewer();
-        refreshFlacList();
     }
 }
 
@@ -745,11 +743,6 @@ function setupQueueListeners() {
 
     Api.onQueueComplete(() => {
         showToast('¡Todas las descargas han finalizado!', 'success');
-    });
-
-    // Nuevos FLAC organizados (ventana integrada o carpeta vigilada)
-    Api.onFlacUpdate(() => {
-        refreshFlacList();
     });
 }
 
@@ -1230,15 +1223,8 @@ function syncResultCards() {
 }
 
 // =========================================
-// FLAC Handlers (descargas lossless organizadas)
+// FLAC Handlers (visor lossless embebido)
 // =========================================
-function formatFileSize(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) {
-        return '0 MB';
-    }
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`;
-}
 
 /** Activa el visor FLAC embebido (solo escritorio: webview de Electron) */
 function setupFlacViewer() {
@@ -1267,46 +1253,6 @@ async function handleOpenFlac() {
         // Móvil / navegador: abrir en pestaña nueva
         window.open('https://flacdownloader.com/', '_blank', 'noopener');
     }
-}
-
-async function refreshFlacList() {
-    if (!DOM.flacList) {
-        return;
-    }
-    try {
-        const res = await Api.listFlac();
-        renderFlacList(res?.files || []);
-    } catch (e) {
-        console.error('[App] Error listando FLAC:', e);
-    }
-}
-
-function renderFlacList(files) {
-    if (!DOM.flacList) {
-        return;
-    }
-    if (files.length === 0) {
-        DOM.flacList.innerHTML =
-            '<div class="no-results">Todavía no hay archivos aquí. Descarga tu primer FLAC desde el buscador y aparecerá organizado en esta lista.</div>';
-        return;
-    }
-    DOM.flacList.innerHTML = files
-        .map(
-            (f) => `
-        <div class="flac-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M9 18V5l12-2v13" />
-                <circle cx="6" cy="18" r="3" />
-                <circle cx="18" cy="16" r="3" />
-            </svg>
-            <div class="flac-item-info">
-                <span class="flac-item-name">${escapeHtml(f.name)}</span>
-                <span class="flac-item-size">${formatFileSize(f.size)}</span>
-            </div>
-        </div>
-    `
-        )
-        .join('');
 }
 
 // =========================================

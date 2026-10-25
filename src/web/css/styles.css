@@ -2605,53 +2605,6 @@ html {
     margin-top: var(--space-xs);
 }
 
-.flac-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-.flac-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    animation: fadeIn 0.2s ease;
-}
-
-.flac-item > svg {
-    width: 24px;
-    height: 24px;
-    color: var(--primary);
-    flex-shrink: 0;
-}
-
-.flac-item-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.flac-item-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.flac-item-size {
-    font-size: 12px;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
 /* Visor FLAC embebido (webview de Electron, solo escritorio) */
 .flac-viewer {
     display: flex;
@@ -2759,8 +2712,7 @@ webview {
 
     .search-results,
     .downloads-list,
-    .track-list,
-    .flac-list {
+    .track-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
