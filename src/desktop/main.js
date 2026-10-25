@@ -175,7 +175,7 @@ function registerDesktopIpc() {
     // Ventana aparte del navegador FLAC (opcional; el webview embebido es
     // la vía principal). Misma partición de sesión para las descargas.
     ipcMain.handle('flac:open-view', () => {
-        const result = flacView.openFlacView(core, flacSession);
+        const result = flacView.openFlacView(core, getFlacSession());
         return { success: result.success, reused: result.reused };
     });
     ipcMain.handle('flac:open-external', () => {
@@ -184,8 +184,14 @@ function registerDesktopIpc() {
     });
 }
 
-// Sesión compartida del FLAC: webview embebido y ventana aparte
-const flacSession = session.fromPartition(`persist:${require('./flac-view').FLAC_PARTITION}`);
+// Sesión compartida del FLAC (lazy: session.fromPartition exige app ready)
+let flacSession = null;
+function getFlacSession() {
+    if (!flacSession) {
+        flacSession = session.fromPartition(`persist:${flacView.FLAC_PARTITION}`);
+    }
+    return flacSession;
+}
 
 // ==========================================
 // Ciclo de vida
@@ -242,7 +248,7 @@ async function initializeApp() {
     await core.initialize();
 
     // Enrutar las descargas del FLAC (webview embebido y ventana aparte)
-    flacView.attachFlacDownloadHandler(core, flacSession);
+    flacView.attachFlacDownloadHandler(core, getFlacSession());
 
     server = createAppServer({
         core,
