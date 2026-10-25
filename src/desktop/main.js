@@ -14,6 +14,10 @@ const logger = require('../core/utils/logger');
 // Evitar 'Acceso denegado (0x5) GPU Cache Creation failed' en Windows
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('disable-http-cache');
+// GPU vieja (HD 4400): el compositor retiene frames viejos y "fantasmas"
+// de elementos eliminados en la pantalla. La composición por software
+// elimina esa clase de artefactos; el impacto en esta UI es imperceptible.
+app.commandLine.appendSwitch('disable-gpu-compositing');
 
 const ffmpegPath = app.isPackaged
     ? path.join(process.resourcesPath, 'ffmpeg.exe')
