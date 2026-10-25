@@ -28,7 +28,8 @@ const State = {
     searchFilter: 'all',
     currentTheme: 'dark',
     embedded: true,
-    capabilities: {}
+    capabilities: {},
+    defaultFormat: localStorage.getItem('mcp_default_format') || 'mp3'
 };
 
 let urlDebounceTimeout = null;
@@ -119,8 +120,15 @@ function init() {
         searchForm: $('search-form'),
         searchInput: $('search-input'),
         searchClear: $('btn-search-clear'),
+        searchAutocomplete: $('search-autocomplete'),
         searchResults: $('search-results'),
         searchFilters: $('search-filters'),
+        linkHint: $('link-hint'),
+        btnHintSearch: $('btn-hint-search'),
+        btnHintDismiss: $('btn-hint-dismiss'),
+        defaultFormat: $('default-format'),
+        btnOpenFolderSm: $('btn-open-folder-sm'),
+        searchFolderPath: $('search-folder-path'),
 
         // Spotify
         spotifyForm: $('spotify-form'),
@@ -211,6 +219,9 @@ function applyCapabilities() {
     }
     if (DOM.btnOpenFolder && !desktopShell) {
         DOM.btnOpenFolder.classList.add('hidden');
+    }
+    if (DOM.btnOpenFolderSm && !desktopShell) {
+        DOM.btnOpenFolderSm.classList.add('hidden');
     }
 }
 
@@ -559,6 +570,7 @@ function setupEventListeners() {
     if (DOM.searchForm) {
         DOM.searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            hideAutocomplete();
             const query = DOM.searchInput?.value.trim();
             if (query) {
                 handleSearch(query);
@@ -567,17 +579,113 @@ function setupEventListeners() {
         });
     }
 
-    // Search - botón X para borrar (visible solo con texto)
+    // Search - botón X para borrar (visible solo con texto) + detección de enlace + autocompletado
     if (DOM.searchInput && DOM.searchClear) {
         DOM.searchInput.addEventListener('input', () => {
             DOM.searchClear.classList.toggle('hidden', !DOM.searchInput.value);
+            updateLinkHint();
+            updateAutocomplete();
         });
         DOM.searchClear.addEventListener('click', () => {
             DOM.searchInput.value = '';
             DOM.searchClear.classList.add('hidden');
+            hideLinkHint();
+            hideAutocomplete();
             DOM.searchInput.focus();
         });
+        // Navegación del autocompletado con flechas y Enter
+        DOM.searchInput.addEventListener('keydown', (e) => {
+            if (!DOM.searchAutocomplete || DOM.searchAutocomplete.classList.contains('hidden')) {
+                return;
+            }
+            const items = DOM.searchAutocomplete.querySelectorAll('.ac-item');
+            if (!items.length) {
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                acIndex = (acIndex + 1) % items.length;
+                paintAutocomplete();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                acIndex = (acIndex - 1 + items.length) % items.length;
+                paintAutocomplete();
+            } else if (e.key === 'Enter' && acIndex >= 0) {
+                e.preventDefault();
+                acceptAutocomplete(items[acIndex].dataset.query);
+            }
+        });
+        DOM.searchInput.addEventListener('blur', () => {
+            setTimeout(hideAutocomplete, 150);
+        });
     }
+
+    // Aviso de enlace detectado
+    if (DOM.btnHintSearch) {
+        DOM.btnHintSearch.addEventListener('click', () => {
+            const value = DOM.searchInput?.value.trim();
+            hideLinkHint();
+            if (value) {
+                handleSearch(value);
+            }
+        });
+    }
+    if (DOM.btnHintDismiss) {
+        DOM.btnHintDismiss.addEventListener('click', hideLinkHint);
+    }
+
+    // Formato por defecto de los resultados (solo preferencia de UI)
+    if (DOM.defaultFormat) {
+        DOM.defaultFormat.value = State.defaultFormat;
+        DOM.defaultFormat.addEventListener('change', () => {
+            State.defaultFormat = DOM.defaultFormat.value;
+            localStorage.setItem('mcp_default_format', State.defaultFormat);
+            showToast(
+                `Descargas de búsqueda en ${DOM.defaultFormat.options[DOM.defaultFormat.selectedIndex].text}`,
+                'info'
+            );
+        });
+    }
+
+    // Abrir carpeta de descargas (solo escritorio: capability del servidor)
+    if (DOM.btnOpenFolderSm) {
+        DOM.btnOpenFolderSm.addEventListener('click', () => {
+            if (State.downloadFolder) {
+                Api.openPath(State.downloadFolder);
+            }
+        });
+    }
+
+    // Atajos de teclado del buscador (escritorio)
+    document.addEventListener('keydown', (e) => {
+        const active = document.activeElement;
+        const typing =
+            active &&
+            (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+
+        // Ctrl+K: enfocar el buscador desde cualquier pestaña
+        if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            switchTab('search');
+            DOM.searchInput?.focus();
+            DOM.searchInput?.select();
+            return;
+        }
+
+        // Esc: limpiar el buscador si está enfocado
+        if (e.key === 'Escape' && active === DOM.searchInput) {
+            DOM.searchInput.value = '';
+            DOM.searchClear?.classList.add('hidden');
+            hideLinkHint();
+            return;
+        }
+
+        // Ctrl+V: pegar enlace en el buscador aunque no esté enfocado
+        if (e.ctrlKey && e.key.toLowerCase() === 'v' && State.currentTab === 'search' && !typing) {
+            e.preventDefault();
+            pasteIntoSearch();
+        }
+    });
 
     if (DOM.searchFilters) {
         DOM.searchFilters.querySelectorAll('.filter-chip').forEach((chip) => {
@@ -723,6 +831,11 @@ function switchTab(tabName) {
     // Visor FLAC cada vez que se entra a la pestaña
     if (tabName === 'flac') {
         setupFlacViewer();
+    }
+
+    // Autoenfoque del buscador (escritorio/ventana; en móvil evita el teclado)
+    if (tabName === 'search' && window.matchMedia('(min-width: 768px)').matches) {
+        DOM.searchInput?.focus();
     }
 }
 
@@ -963,16 +1076,142 @@ function updateFolderDisplay() {
     if (DOM.folderPath) {
         DOM.folderPath.textContent = State.downloadFolder || 'Seleccionar carpeta...';
     }
+    if (DOM.searchFolderPath) {
+        DOM.searchFolderPath.textContent = State.downloadFolder || '';
+        DOM.searchFolderPath.title = State.downloadFolder || '';
+    }
 }
 
 // =========================================
 // Search Handlers (Buscador Avanzado, mobile-first)
 // =========================================
 const RECENT_KEY = 'mcp_recent_searches';
+const RECENTS_MAX = 6;
 const SUGGESTIONS = ['Bad Bunny', 'Quevedo', 'Rock 80s español', 'Lofi para estudiar'];
+const LINK_PATTERNS = [
+    /youtube\.com\/watch|youtu\.be\//i,
+    /open\.spotify\.com\/(playlist|album|track)\//i,
+    /soundcloud\.com\/[\w-]+\/[\w-]+/i
+];
 
 /** Descargas activas asociadas a tarjetas de resultado: url -> { qid, card } */
 const resultDownloads = new Map();
+
+function isLikelyLink(text) {
+    return LINK_PATTERNS.some((re) => re.test(text || ''));
+}
+
+function updateLinkHint() {
+    if (!DOM.linkHint || !DOM.searchInput) {
+        return;
+    }
+    const value = DOM.searchInput.value.trim();
+    DOM.linkHint.classList.toggle('hidden', !isLikelyLink(value));
+}
+
+function hideLinkHint() {
+    DOM.linkHint?.classList.add('hidden');
+}
+
+// --- Autocompletado (recientes + sugerencias, flechas y Enter) ---
+let acIndex = -1;
+
+function updateAutocomplete() {
+    if (!DOM.searchAutocomplete || !DOM.searchInput) {
+        return;
+    }
+    const value = DOM.searchInput.value.trim().toLowerCase();
+    if (!value || isLikelyLink(value)) {
+        hideAutocomplete();
+        return;
+    }
+    const seen = new Set();
+    const matches = [...getRecentSearches(), ...SUGGESTIONS]
+        .filter((q) => {
+            const lower = q.toLowerCase();
+            if (!lower.includes(value) || seen.has(lower)) {
+                return false;
+            }
+            seen.add(lower);
+            return true;
+        })
+        .slice(0, 6);
+
+    if (matches.length === 0) {
+        hideAutocomplete();
+        return;
+    }
+
+    acIndex = -1;
+    DOM.searchAutocomplete.innerHTML = matches
+        .map(
+            (q) => `
+        <div class="ac-item" role="option" data-query="${escapeHtml(q)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+            </svg>
+            <span>${escapeHtml(q)}</span>
+        </div>
+    `
+        )
+        .join('');
+
+    DOM.searchAutocomplete.querySelectorAll('.ac-item').forEach((el) => {
+        el.addEventListener('mousedown', (e) => {
+            // mousedown (no click) para ejecutarse antes del blur del input
+            e.preventDefault();
+            acceptAutocomplete(el.dataset.query);
+        });
+    });
+    DOM.searchAutocomplete.classList.remove('hidden');
+}
+
+function paintAutocomplete() {
+    if (!DOM.searchAutocomplete) {
+        return;
+    }
+    DOM.searchAutocomplete.querySelectorAll('.ac-item').forEach((el, i) => {
+        el.classList.toggle('active', i === acIndex);
+    });
+}
+
+function acceptAutocomplete(query) {
+    hideAutocomplete();
+    if (DOM.searchInput) {
+        DOM.searchInput.value = query;
+        DOM.searchClear?.classList.remove('hidden');
+        updateLinkHint();
+    }
+    handleSearch(query);
+    DOM.searchInput?.blur();
+}
+
+function hideAutocomplete() {
+    acIndex = -1;
+    DOM.searchAutocomplete?.classList.add('hidden');
+}
+
+/** Ctrl+V global: pega el portapapeles en el buscador y detecta enlaces */
+async function pasteIntoSearch() {
+    try {
+        let text = '';
+        if (navigator.clipboard?.readText) {
+            text = await navigator.clipboard.readText();
+        } else if (window.electronAPI?.readClipboard) {
+            text = window.electronAPI.readClipboard();
+        }
+        text = (text || '').trim();
+        if (text && DOM.searchInput) {
+            DOM.searchInput.value = text;
+            DOM.searchClear?.classList.remove('hidden');
+            updateLinkHint();
+            DOM.searchInput.focus();
+        }
+    } catch (e) {
+        /* sin permiso de portapapeles: comportamiento silencioso */
+    }
+}
 
 function getRecentSearches() {
     try {
@@ -985,7 +1224,15 @@ function getRecentSearches() {
 function saveRecentSearch(query) {
     const list = getRecentSearches().filter((q) => q !== query);
     list.unshift(query);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 4)));
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENTS_MAX)));
+}
+
+function deleteRecentSearch(query) {
+    localStorage.setItem(
+        RECENT_KEY,
+        JSON.stringify(getRecentSearches().filter((q) => q !== query))
+    );
+    renderSearchEmptyState();
 }
 
 function formatDuration(seconds) {
@@ -1001,12 +1248,20 @@ function formatDuration(seconds) {
         : `${m}:${String(sec).padStart(2, '0')}`;
 }
 
-/** Estado vacío: recientes, sugerencias y tarjeta de pegar enlace */
+/**
+ * Estado vacío de búsqueda: pegar enlace destacado, recientes borrables,
+ * descargas recientes y sugerencias. Cuadrícula de 2 columnas en >=1100px.
+ */
 function renderSearchEmptyState() {
     if (!DOM.searchResults) {
         return;
     }
     const recents = getRecentSearches();
+    const recentDownloads = (State.downloads || [])
+        .filter((d) => d.status === 'completed')
+        .slice(-4)
+        .reverse();
+    const canOpen = State.capabilities.desktopShell === true;
 
     const recentsHtml = recents.length
         ? `
@@ -1015,44 +1270,129 @@ function renderSearchEmptyState() {
             ${recents
         .map(
             (q) => `
-                <button type="button" class="recent-item" data-query="${escapeHtml(q)}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="recent-item" role="button" tabindex="0" data-query="${escapeHtml(q)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
                     <span>${escapeHtml(q)}</span>
-                </button>
+                    <button type="button" class="recent-del" data-del="${escapeHtml(q)}" aria-label="Borrar búsqueda reciente">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
             `
         )
         .join('')}
         </div>`
-        : '';
+        : `
+        <div class="empty-section">
+            <p class="empty-title">Búsquedas recientes</p>
+            <p class="lan-line">Aún no has buscado nada. Lo que busques aparecerá aquí.</p>
+        </div>`;
+
+    const downloadsHtml = `
+        <div class="empty-section">
+            <p class="empty-title">Descargas recientes</p>
+            ${
+    recentDownloads.length
+        ? recentDownloads
+            .map(
+                (d) => `
+                    <div class="recent-item" data-download="${escapeHtml(d.filePath || '')}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>${escapeHtml(d.title || 'Descarga')}</span>
+                        ${
+    canOpen && d.filePath
+        ? `<button type="button" class="recent-open" data-open="${escapeHtml(d.filePath)}" aria-label="Abrir archivo">Abrir</button>`
+        : ''
+}
+                    </div>
+                `
+            )
+            .join('')
+        : '<p class="lan-line">Las descargas completadas aparecerán aquí.</p>'
+}
+        </div>`;
 
     DOM.searchResults.innerHTML = `
-        ${recentsHtml}
-        <div class="empty-section">
-            <p class="empty-title">Prueba con</p>
-            <div class="suggestion-row">
-                ${SUGGESTIONS.map(
+        <div class="empty-state">
+            <button type="button" class="paste-row" id="empty-paste-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                </svg>
+                <span class="paste-row-text">
+                    <strong>Pegar un enlace</strong>
+                    <span>YouTube, Spotify o SoundCloud — se detecta solo</span>
+                </span>
+            </button>
+
+            <div class="empty-cols">
+                ${recentsHtml}
+                ${downloadsHtml}
+            </div>
+
+            <div class="empty-section">
+                <p class="empty-title">Prueba con</p>
+                <div class="suggestion-row">
+                    ${SUGGESTIONS.map(
         (s) =>
             `<button type="button" class="suggestion-chip" data-query="${escapeHtml(s)}">${escapeHtml(s)}</button>`
     ).join('')}
+                </div>
             </div>
-        </div>
-        <div class="paste-card">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-            </svg>
-            <div class="paste-card-info">
-                <strong>Pegar un enlace</strong>
-                <span>YouTube, Spotify o SoundCloud</span>
-            </div>
-            <button type="button" class="btn-paste-link" id="btn-paste-link">Pegar</button>
         </div>
     `;
 
-    DOM.searchResults.querySelectorAll('[data-query]').forEach((el) => {
+    // Recientes: tocar = buscar; X = borrar
+    DOM.searchResults.querySelectorAll('.recent-item[data-query]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('.recent-del')) {
+                return;
+            }
+            const q = el.dataset.query;
+            if (DOM.searchInput) {
+                DOM.searchInput.value = q;
+                DOM.searchClear?.classList.remove('hidden');
+            }
+            handleSearch(q);
+        });
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                el.click();
+            }
+        });
+    });
+    DOM.searchResults.querySelectorAll('.recent-del').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteRecentSearch(btn.dataset.del);
+        });
+    });
+
+    // Descargas recientes: Abrir (escritorio)
+    DOM.searchResults.querySelectorAll('.recent-open').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            Api.openPath(btn.dataset.open);
+        });
+    });
+
+    // Pegar enlace destacado
+    DOM.searchResults.querySelector('#empty-paste-row')?.addEventListener('click', async () => {
+        await pasteIntoSearch();
+    });
+
+    // Sugerencias
+    DOM.searchResults.querySelectorAll('.suggestion-chip').forEach((el) => {
         el.addEventListener('click', () => {
             const q = el.dataset.query;
             if (DOM.searchInput) {
@@ -1061,11 +1401,6 @@ function renderSearchEmptyState() {
             }
             handleSearch(q);
         });
-    });
-
-    DOM.searchResults.querySelector('#btn-paste-link')?.addEventListener('click', async () => {
-        switchTab('home');
-        await handlePaste();
     });
 }
 
@@ -1114,6 +1449,7 @@ async function handleSearch(query) {
 }
 
 function renderResultCards(results) {
+    const primary = State.defaultFormat || 'mp3';
     DOM.searchResults.innerHTML = results
         .map((item) => {
             const url = item.url || item.webpage_url || '';
@@ -1129,9 +1465,9 @@ function renderResultCards(results) {
                     <p class="result-title">${escapeHtml(item.cleanTitle || item.title)}</p>
                     <p class="result-meta">${escapeHtml(artist)} · YouTube</p>
                     <div class="result-actions">
-                        <button type="button" class="result-format-btn primary" data-format="mp3" aria-label="Descargar MP3 320k">MP3</button>
-                        <button type="button" class="result-format-btn" data-format="m4a" aria-label="Descargar M4A">M4A</button>
-                        <button type="button" class="result-format-btn" data-format="mp4" aria-label="Descargar MP4">MP4</button>
+                        <button type="button" class="result-format-btn${primary === 'mp3' ? ' primary' : ''}" data-format="mp3" aria-label="Descargar MP3 320k">MP3</button>
+                        <button type="button" class="result-format-btn${primary === 'm4a' ? ' primary' : ''}" data-format="m4a" aria-label="Descargar M4A">M4A</button>
+                        <button type="button" class="result-format-btn${primary === 'mp4' ? ' primary' : ''}" data-format="mp4" aria-label="Descargar MP4 1080p">MP4</button>
                     </div>
                     <div class="result-progress hidden">
                         <div class="result-progress-track"><div class="result-progress-fill"></div></div>
@@ -1153,7 +1489,9 @@ function renderResultCards(results) {
 
 async function handleResultDownload(card, url, format) {
     try {
-        const result = await Api.addToQueue({ url, format, quality: null });
+        // MP4 de búsqueda usa la calidad por defecto del selector (1080p)
+        const quality = format === 'mp4' ? 1080 : null;
+        const result = await Api.addToQueue({ url, format, quality });
         if (!result.success) {
             showToast(result.message || 'No se pudo agregar la descarga', 'error');
             return;

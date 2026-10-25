@@ -328,8 +328,42 @@
                                         <path d="m21 21-4.35-4.35" />
                                     </svg>
                                 </button>
+                                <div class="search-autocomplete hidden" id="search-autocomplete" role="listbox" aria-label="Sugerencias de búsqueda"></div>
                             </div>
                         </form>
+
+                        <!-- Aviso discreto de enlace detectado -->
+                        <div class="link-hint hidden" id="link-hint" role="status">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                            <span class="link-hint-text">Enlace detectado. ¿Buscar?</span>
+                            <button type="button" class="link-hint-btn" id="btn-hint-search">Buscar</button>
+                            <button type="button" class="link-hint-close" id="btn-hint-dismiss" aria-label="Descartar aviso">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Barra de opciones: formato por defecto y carpeta destino -->
+                        <div class="search-options">
+                            <label class="search-options-label" for="default-format">Formato:</label>
+                            <select class="select-settings select-format" id="default-format">
+                                <option value="mp3">MP3 320k</option>
+                                <option value="m4a">M4A</option>
+                                <option value="mp4">MP4 1080p</option>
+                            </select>
+                            <button type="button" class="btn-secondary btn-open-folder-sm" id="btn-open-folder-sm" aria-label="Abrir carpeta de descargas">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                </svg>
+                                <span>Abrir carpeta</span>
+                            </button>
+                            <span class="search-folder-path" id="search-folder-path"></span>
+                        </div>
 
                         <!-- Chips de filtro (scroll horizontal) -->
                         <div class="search-filters" id="search-filters" role="group" aria-label="Filtros de búsqueda">

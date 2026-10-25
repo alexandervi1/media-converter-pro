@@ -8,7 +8,7 @@
  *  - /api/* y SSE: siempre red (network-only).
  */
 
-const CACHE_NAME = 'mcp-shell-v8';
+const CACHE_NAME = 'mcp-shell-v9';
 
 const SHELL_ASSETS = [
     '/',
