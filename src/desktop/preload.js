@@ -23,5 +23,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Navegador FLAC integrado
     openFlacView: () => ipcRenderer.invoke('flac:open-view'),
-    openFlacExternal: () => ipcRenderer.invoke('flac:open-external')
+    openFlacExternal: () => ipcRenderer.invoke('flac:open-external'),
+
+    // Visor FLAC embebido (WebContentsView gestionada por el main)
+    flacEmbed: (visible, bounds) => ipcRenderer.invoke('flac:embed', { visible, bounds }),
+    flacBack: () => ipcRenderer.invoke('flac:back'),
+    flacReload: () => ipcRenderer.invoke('flac:reload'),
+    onFlacLoading: (callback) => ipcRenderer.on('flac:loading', (_, loading) => callback(loading))
 });

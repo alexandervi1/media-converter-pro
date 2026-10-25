@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session, WebContentsView } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -112,8 +112,7 @@ function createMainWindow(url) {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
-            nodeIntegration: false,
-            webviewTag: true
+            nodeIntegration: false
         }
     });
 
@@ -194,7 +193,7 @@ function registerDesktopIpc() {
         return restartServer({ lanEnabled: enabled === true });
     });
 
-    // Ventana aparte del navegador FLAC (opcional; el webview embebido es
+    // Ventana aparte del navegador FLAC (opcional; el visor embebido es
     // la vía principal). Misma partición de sesión para las descargas.
     ipcMain.handle('flac:open-view', () => {
         const result = flacView.openFlacView(core, getFlacSession());
@@ -204,6 +203,77 @@ function registerDesktopIpc() {
         const { shell } = require('electron');
         shell.openExternal(flacView.FLAC_SITE_URL);
     });
+
+    // Visor FLAC embebido: WebContentsView gestionada por el main process.
+    // Mostrar/ocultar con addChildView/removeChildView es limpio: la capa
+    // nativa nunca queda pintada sobre otras pestañas.
+    ipcMain.handle('flac:embed', (event, { visible, bounds }) => {
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            return { success: false };
+        }
+        if (!visible) {
+            hideFlacEmbed();
+            return { success: true };
+        }
+        const b = bounds || {};
+        const safe = {
+            x: Math.max(0, Math.round(b.x || 0)),
+            y: Math.max(0, Math.round(b.y || 0)),
+            width: Math.max(1, Math.round(b.width || 100)),
+            height: Math.max(1, Math.round(b.height || 100))
+        };
+        showFlacEmbed(safe);
+        return { success: true };
+    });
+
+    ipcMain.handle('flac:back', () => {
+        if (flacEmbedView?.webContents.canGoBack()) {
+            flacEmbedView.webContents.goBack();
+        }
+    });
+
+    ipcMain.handle('flac:reload', () => {
+        flacEmbedView?.webContents.reload();
+    });
+}
+
+// ==========================================
+// Visor FLAC embebido (WebContentsView)
+// ==========================================
+
+let flacEmbedView = null;
+
+function showFlacEmbed(bounds) {
+    if (!flacEmbedView) {
+        flacEmbedView = new WebContentsView({
+            webPreferences: {
+                partition: `persist:${flacView.FLAC_PARTITION}`,
+                contextIsolation: true,
+                nodeIntegration: false
+            }
+        });
+        flacEmbedView.setBackgroundColor('#0a1220');
+        flacEmbedView.webContents.loadURL(flacView.FLAC_SITE_URL);
+
+        // Estado de carga hacia la UI
+        const sendLoading = (loading) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('flac:loading', loading);
+            }
+        };
+        flacEmbedView.webContents.on('did-start-loading', () => sendLoading(true));
+        flacEmbedView.webContents.on('did-stop-loading', () => sendLoading(false));
+    }
+    mainWindow.contentView.addChildView(flacEmbedView);
+    flacEmbedView.setBounds(bounds);
+}
+
+function hideFlacEmbed() {
+    // Solo se desacopla de la ventana: la vista (y el estado del sitio)
+    // se conservan para la próxima visita.
+    if (flacEmbedView && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.contentView.removeChildView(flacEmbedView);
+    }
 }
 
 // Sesión compartida del FLAC (lazy: session.fromPartition exige app ready)

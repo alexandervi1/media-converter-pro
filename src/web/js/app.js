@@ -92,7 +92,6 @@ function init() {
         // FLAC
         flacViewer: $('flac-viewer'),
         flacHeroMobile: $('flac-hero-mobile'),
-        flacWebview: $('flac-webview'),
         flacLoading: $('flac-loading'),
         flacBack: $('flac-back'),
         flacReload: $('flac-reload'),
@@ -360,6 +359,12 @@ function toggleDrawer(open) {
         DOM.settingsDrawer.classList.add('hidden');
         DOM.drawerOverlay.classList.add('hidden');
     }
+
+    // La vista FLAC nativa flota sobre todo el DOM: se oculta mientras el
+    // cajón está abierto encima de ella.
+    if (State.currentTab === 'flac' && window.electronAPI?.flacEmbed) {
+        window.electronAPI.flacEmbed(!shouldOpen);
+    }
 }
 
 function applyTheme(themeName) {
@@ -496,18 +501,25 @@ function setupEventListeners() {
             }
         });
     }
-    // Toolbar del visor FLAC (el webview se crea/desstruye por visita; los
-    // handlers resuelven la referencia en el momento del clic)
+    // Toolbar del visor FLAC (la vista nativa la maneja el main process)
     if (DOM.flacBack) {
-        DOM.flacBack.addEventListener('click', () => {
-            if (DOM.flacWebview?.canGoBack()) {
-                DOM.flacWebview.goBack();
-            }
-        });
+        DOM.flacBack.addEventListener('click', () => window.electronAPI?.flacBack?.());
     }
     if (DOM.flacReload) {
-        DOM.flacReload.addEventListener('click', () => DOM.flacWebview?.reload());
+        DOM.flacReload.addEventListener('click', () => window.electronAPI?.flacReload?.());
     }
+    if (window.electronAPI?.onFlacLoading) {
+        window.electronAPI.onFlacLoading((loading) => {
+            DOM.flacLoading?.classList.toggle('hidden', !loading);
+        });
+    }
+
+    // Redimensionar la ventana: reposicionar la vista FLAC si está activa
+    window.addEventListener('resize', () => {
+        if (State.currentTab === 'flac') {
+            sendFlacBounds(true);
+        }
+    });
 
     // Home - Paste button
     if (DOM.btnPaste) {
@@ -848,12 +860,10 @@ function switchTab(tabName) {
     if (contentArea) {
         contentArea.scrollTop = 0;
     }
-    // FLAC vive SOLO en su pestaña: al salir se destruye el webview (su capa
-    // nativa jamás pinta en otra vista). Las cookies persisten en la partición
-    // persist:flac, así que el sitio no repite verificaciones.
-    if (tabName !== 'flac' && DOM.flacWebview) {
-        DOM.flacWebview.remove();
-        DOM.flacWebview = null;
+    // El visor FLAC (WebContentsView) SOLO vive en su pestaña: al salir se
+    // desacopla de la ventana y su capa nativa desaparece por completo.
+    if (tabName !== 'flac') {
+        window.electronAPI?.flacEmbed?.(false);
     }
 
     // Estado vacío de búsqueda la primera vez que se entra
@@ -1641,39 +1651,36 @@ function syncResultCards() {
 // =========================================
 
 /**
- * Activa el visor FLAC embebido (solo escritorio: webview de Electron).
- * El webview se CREA al entrar en la pestaña y se DESTRUYE al salir
- * (switchTab): su capa nativa jamás aparece en otra vista. Las cookies
- * persisten en la partición persist:flac entre visitas.
+ * Visor FLAC embebido: la página vive en una WebContentsView del main
+ * process (visible solo mientras esta pestaña está activa). Aquí solo
+ * mostramos el marco (toolbar) y le pasamos los límites del contenedor.
  */
 function setupFlacViewer() {
-    if (!window.electronAPI || !DOM.flacViewer) {
+    if (!window.electronAPI?.flacEmbed || !DOM.flacViewer) {
         // Móvil / navegador: mostrar el botón de abrir fuera
         DOM.flacHeroMobile?.classList.remove('hidden');
         return;
     }
-
-    if (!DOM.flacWebview || !DOM.flacWebview.isConnected) {
-        const wrap = document.getElementById('flac-webview-wrap');
-        const wv = document.createElement('webview');
-        wv.id = 'flac-webview';
-        wv.partition = 'persist:flac';
-        wv.setAttribute('allowpopups', '');
-        wv.src = 'https://flacdownloader.com/';
-
-        wv.addEventListener('dom-ready', () => DOM.flacLoading?.classList.add('hidden'));
-        wv.addEventListener('did-start-loading', () =>
-            DOM.flacLoading?.classList.remove('hidden')
-        );
-        wv.addEventListener('did-stop-loading', () =>
-            DOM.flacLoading?.classList.add('hidden')
-        );
-
-        wrap.prepend(wv);
-        DOM.flacWebview = wv;
-        DOM.flacLoading?.classList.remove('hidden');
-    }
     DOM.flacViewer.classList.remove('hidden');
+    sendFlacBounds(true);
+}
+
+function sendFlacBounds(visible = true) {
+    if (!window.electronAPI?.flacEmbed) {
+        return;
+    }
+    const wrap = document.getElementById('flac-webview-wrap');
+    if (!wrap) {
+        window.electronAPI.flacEmbed(false);
+        return;
+    }
+    const r = wrap.getBoundingClientRect();
+    window.electronAPI.flacEmbed(visible, {
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height
+    });
 }
 
 async function handleOpenFlac() {
