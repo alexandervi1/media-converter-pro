@@ -44,6 +44,11 @@ function init() {
         document.body.classList.add('web');
     }
 
+    // Sidebar de escritorio: estado colapsado persistido (solo UI)
+    if (localStorage.getItem('mcp_sidebar_collapsed') === '1') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+
     DOM = {
         // Drawer
         btnHamburger: $('btn-hamburger'),
@@ -362,7 +367,15 @@ function applyTheme(themeName) {
 function setupEventListeners() {
     // Control del Drawer (Menú Hamburguesa & Tuerquita)
     if (DOM.btnHamburger) {
-        DOM.btnHamburger.addEventListener('click', () => toggleDrawer(true));
+        DOM.btnHamburger.addEventListener('click', () => {
+            if (window.matchMedia('(min-width: 1100px)').matches) {
+                // Escritorio ancho: alternar sidebar colapsado (solo UI)
+                const collapsed = document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('mcp_sidebar_collapsed', collapsed ? '1' : '0');
+            } else {
+                toggleDrawer(true);
+            }
+        });
     }
     if (DOM.btnSettingsGear) {
         DOM.btnSettingsGear.addEventListener('click', () => toggleDrawer(true));
@@ -431,6 +444,11 @@ function setupEventListeners() {
                 ? '<span class="conn-text" style="color: var(--success)">● Conectado</span>'
                 : '<span class="conn-text" style="color: var(--error)">● Sin conexión</span>';
         }
+    });
+
+    // Sidebar de escritorio: mismos destinos que las pestañas
+    document.querySelectorAll('.side-item').forEach((btn) => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
     // Tab navigation
@@ -687,6 +705,17 @@ function switchTab(tabName) {
         tab.setAttribute('aria-current', 'page');
     }
     panel?.classList.add('active');
+
+    // Sincronizar el sidebar de escritorio (mismo estado de navegación)
+    document.querySelectorAll('.side-item').forEach((btn) => {
+        const active = btn.dataset.tab === tabName;
+        btn.classList.toggle('active', active);
+        if (active) {
+            btn.setAttribute('aria-current', 'page');
+        } else {
+            btn.removeAttribute('aria-current');
+        }
+    });
 
     // Estado vacío de búsqueda la primera vez que se entra
     if (tabName === 'search' && DOM.searchResults && !DOM.searchResults.children.length) {
@@ -1586,14 +1615,18 @@ function getStatusText(item) {
 }
 
 function updateBadge() {
-    if (!DOM.downloadsBadge) {
-        return;
-    }
     const activeCount = State.downloads.filter(
         (i) => i.status === 'pending' || i.status === 'downloading' || i.status === 'converting'
     ).length;
 
-    DOM.downloadsBadge.textContent = activeCount > 0 ? activeCount : '';
+    if (DOM.downloadsBadge) {
+        DOM.downloadsBadge.textContent = activeCount > 0 ? activeCount : '';
+    }
+    // Badge del sidebar de escritorio
+    const sideBadge = document.getElementById('side-downloads-badge');
+    if (sideBadge) {
+        sideBadge.textContent = activeCount > 0 ? activeCount : '';
+    }
 }
 
 // =========================================
