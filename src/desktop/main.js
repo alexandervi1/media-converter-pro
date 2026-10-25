@@ -266,13 +266,18 @@ function showFlacEmbed(bounds) {
     }
     mainWindow.contentView.addChildView(flacEmbedView);
     flacEmbedView.setBounds(bounds);
+    // Electron 28: removeChildView no siempre desmonta la capa nativa;
+    // setVisible(true) explícito al mostrar es parte del patrón seguro.
+    flacEmbedView.setVisible(true);
 }
 
 function hideFlacEmbed() {
-    // Solo se desacopla de la ventana: la vista (y el estado del sitio)
-    // se conservan para la próxima visita.
     if (flacEmbedView && mainWindow && !mainWindow.isDestroyed()) {
+        // Triple seguro para Electron 28 (removeChildView puede dejar la
+        // capa nativa componiéndose): desacoplar + ocultar + tamaño cero.
         mainWindow.contentView.removeChildView(flacEmbedView);
+        flacEmbedView.setVisible(false);
+        flacEmbedView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
     }
 }
 
