@@ -1,0 +1,70 @@
+============================================================
+CAMBIO 3 - ARQUITECTURA CLIENTE-SERVIDOR UNIFICADA
+============================================================
+Fecha: 24/10/2026
+Rama: develop (commit 9920900)
+Estado: COMPLETADO Y VERIFICADO (smoke test 16/16)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Separar la logica de Electron para que la misma UI sirva a
+escritorio, navegador del telefono y Android, exponiendo el
+motor de descargas como servidor HTTP local.
+
+------------------------------------------------------------
+2. ESTRUCTURA NUEVA (reemplaza a src/main + src/preload)
+------------------------------------------------------------
+src/core/     -> Logica de negocio SIN Electron (rutas inyectadas)
+  index.js        AppCore: cola, descargas, Spotify, settings,
+                  eventos (onEvent -> SSE), processQueueLoop
+  services/       DownloadService, QueueService, SpotifyService
+  utils/          config (createConfigStore), logger, validators
+  constants.js
+src/server/   -> node:http puro (0 dependencias nuevas)
+  index.js        REST /api/* + SSE /api/events + estaticos de
+                  src/web + token de emparejamiento para LAN
+                  (loopback exento de token)
+  standalone.js   Servidor sin Electron (--port --data-dir --lan)
+src/desktop/  -> Electron como shell fino
+  main.js         Instancia unica, arranca core+server en
+                  127.0.0.1:0 (puerto aleatorio), carga la UI por
+                  HTTP; IPC minimo (ventana, dialogo carpeta, LAN)
+  preload.js      contextBridge: solo lo que HTTP no cubre
+  flac-view.js    Ventana/vis FLAC (ver cambio 6)
+src/web/      -> UI unica (antes src/renderer): js/api.js cliente
+                 fetch+EventSource con detección de entorno
+
+------------------------------------------------------------
+3. API REST (espejo de la antigua IPC)
+------------------------------------------------------------
+GET  /api/health         -> estado + capabilities + token (loopback)
+GET  /api/events         -> SSE (queue-update, queue-complete,
+                            flac-update; throttle 250ms)
+GET  /api/queue          POST /api/queue/add|start|clear
+DELETE /api/queue/:id
+GET  /api/video/info?url GET /api/search?q&limit&type
+POST /api/spotify/parse  POST /api/spotify/download
+GET|POST /api/settings   POST /api/folder/select (solo escritorio)
+POST /api/path/open      POST /api/cache/clear
+Auth: clientes no-loopback DEBEN enviar X-Auth-Token (o ?token=).
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- bun scripts/smoke-test.js (incluye auth LAN 401/200,
+  path traversal bloqueado, SSE hello y queue-update)
+- bun run start (escritorio) / bun run server (standalone)
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- REGLA DE ORO: la logica nueva va en core/ sin Electron. Las
+  capacidades nativas se inyectan como hooks desde desktop/
+  (patron onSelectFolder) o se exponen en /api/health ->
+  capabilities (la UI oculta botones segun capabilities).
+- El cliente UI (api.js) detecta entorno: window.electronAPI =
+  escritorio (same-origin sin token); si no, localStorage
+  'mcp_server' {baseUrl, token} (pantalla de conexion).
+- La lista de endpoints vive en src/server/index.js; mantener
+  api.js sincronizado.

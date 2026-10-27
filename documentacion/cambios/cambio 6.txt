@@ -1,0 +1,86 @@
+============================================================
+CAMBIO 6 - INTEGRACION FLAC (VISOR EMBEBIDO Y ORGANIZADOR)
+============================================================
+Fecha: 24/10/2026
+Ramas: develop (commits 2c89946, b1460ee, de47e49, c742a8d,
+d445c18)
+Estado: COMPLETADO Y VERIFICADO (test Electron + descarga real)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Permitir descargas lossless (FLAC) usando flacdownloader.com
+como fuente, SIN automatizar nada: el usuario navega y descarga
+manualmente en una ventana integrada, y la app ordena cada
+archivo que baja hacia <descargas>/flac/.
+
+DECISION ETICA/TECNICA: no se automatiza la API del sitio ni se
+elude su anti-bot (Cloudflare Turnstile). La app es ventana +
+organizador de carpeta. Integrar la API privada del sitio
+(credenciales en pool de Qobuz/Tidal) fue descartado.
+
+------------------------------------------------------------
+2. ARCHIVOS
+------------------------------------------------------------
+- src/core/index.js: getFlacDir/ensureFlacDir/listFlacFiles,
+  organizeIncomingFile (nombre unico con sufijos), notifyFlacChange,
+  _watchFlacDir (fs.watch con debounce 600ms)
+- src/server/index.js: GET /api/flac/list
+- src/desktop/flac-view.js: URL del sitio, particion
+  persist:flac, attachFlacDownloadHandler (a nivel de SESION),
+  openFlacView (ventana aparte opcional)
+- src/desktop/main.js: interceptor de descargas de la sesion
+  persist:flac + visor embebido WebContentsView (ver abajo)
+- src/web/index.html + app.js: pestaña FLAC con toolbar
+  (atras/recargar/abrir externo) y boton movil
+- scripts/flac-view-test.js: test Electron del interceptor
+  (servidor local + will-download -> carpeta flac/)
+
+------------------------------------------------------------
+3. ARQUITECTURA ACTUAL DEL VISOR (importante - hubo 3 iteraciones)
+------------------------------------------------------------
+EVOLUCION: ventana aparte -> <webview> embebido -> WebContentsView
+del main process (ACTUAL). El <webview> se descarto: al
+destruirlo su capa nativa quedaba pintada sobre otras pestañas.
+
+FUNCIONAMIENTO ACTUAL:
+- Al entrar a FLAC, el renderer envia los limites de
+  #flac-webview-wrap por IPC (flac:embed true+bounds) y el main
+  acopla una WebContentsView (particion persist:flac) con
+  addChildView + setBounds + setVisible(true).
+- Al salir (switchTab != flac), flac:embed false -> removeChildView
+  + setVisible(false) + setBounds 0x0 (triple seguro: Electron 28
+  puede dejar la capa nativa componiendose con removeChildView solo).
+- Al abrir el cajon de ajustes sobre FLAC, la vista se oculta
+  (el cajon es DOM y la vista nativa flota encima).
+- window resize -> el renderer reenvia limites.
+- El estado del sitio se conserva entre visitas (vista cacheada
+  en main, cookies en la particion persistente).
+- webviewTag se desactivo en la ventana principal.
+
+DESCARGAS: session.fromPartition('persist:flac') con will-download
+-> guarda a temp -> core.organizeIncomingFile -> mueve a
+<downloadFolder>/flac/ con nombre sanitizado y unico -> SSE
+flac-update. La ventana aparte usa la MISMA particion.
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- bunx electron scripts/flac-view-test.js -> PASS
+- Entrar/salir de FLAC varias veces: el visor solo en su pestaña
+- Descargar desde el visor -> archivo en Descargas/flac/
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- COMPOSICION GPU: en la iGPU HD 4400 habia frames fantasma
+  (visor en otras pestañas y barra azul del indicador antiguo).
+  Fix: app.commandLine 'disable-gpu-compositing' en desktop/main.js.
+  Si se actualiza Electron a >=30, probar quitarlo.
+- Electron 28 = primer release de WebContentsView (bugs). El
+  patrón seguro de ocultado esta en hideFlacEmbed: NO quitarlo.
+- La lista de "Archivos organizados" en la pestaña se ELIMINO a
+  pedido del usuario (no aportaba valor); el endpoint
+  /api/flac/list y el watcher siguen vivos por si se reutilizan.
+- El HTML del index debe quedar BALANCEADO (ver cambio 8): un
+  div sin cerrar anidaba paneles y causo visores fantasma.

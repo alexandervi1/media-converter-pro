@@ -1,0 +1,58 @@
+============================================================
+CAMBIO 4 - PWA Y APP ANDROID (CAPACITOR + CI DEL APK)
+============================================================
+Fecha: 24/10/2026
+Rama: develop (commit ee0ae85)
+Estado: COMPLETADO (APK pendiente de probar en telefono fisico)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Convertir la UI unica en PWA instalable y empaquetarla como APK
+compilado en la nube (sin Android Studio en el PC).
+
+------------------------------------------------------------
+2. ARCHIVOS NUEVOS / MODIFICADOS
+------------------------------------------------------------
+- src/web/manifest.webmanifest: PWA (standalone, iconos 192/512,
+  theme #1a1a2e)
+- src/web/sw.js: service worker cache-first del app shell
+  (HTML/CSS/JS/iconos); /api/* SIEMPRE red. IMPORTANTE: subir
+  CACHE_NAME (v1->v9) en cada cambio de UI para que los
+  clientes reciban la version nueva.
+- src/web/icons/: iconos generados desde design/iconos
+- android/: proyecto Capacitor (appId com.mediaconverter.pro,
+  webDir src/web, androidScheme http, cleartext para LAN,
+  iconos copiados a mipmap-*)
+- .github/workflows/android.yml: compila el APK al subir un tag
+  android-* (o manual). Artifact: MediaConverterPro-APK.
+- .gitignore: android/app/src/main/assets/public/ ignorado
+
+------------------------------------------------------------
+3. FLUJO DEL TELEFONO
+------------------------------------------------------------
+1. PC: menu hamburguesa -> Servidor -> activar "Acceso desde el
+   telefono" (reinicia el server en 0.0.0.0:45690 y muestra
+   URL + token de 8 caracteres, persistido en server-token).
+2. Telefono: APK o navegador -> pantalla de conexion ->
+   direccion + token -> la cola se sincroniza por SSE.
+3. PWA: "Agregar a pantalla de inicio" desde el navegador.
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- node src/server/standalone.js --lan -> abre http://IP:45690
+  en el telefono, empareja con el token y lanza una descarga.
+- APK: push del tag android-vX.Y.Z -> Actions -> artifact.
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- El APK usa la MISMA UI; los botones solo-escritorio se ocultan
+  por capabilities (/api/health -> folderDialog/desktopShell).
+- SW: RECORDAR SUBIR CACHE_NAME con cada cambio de UI, o los
+  clientes PWA seguiran viendo la version vieja.
+- El APK sin firmar (debug). Para distribucion: keystore en
+  Secrets de GitHub (pendiente).
+- Windows pide permiso de firewall la primera vez que se activa
+  el modo LAN (redes privadas).

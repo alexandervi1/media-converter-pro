@@ -1,0 +1,119 @@
+================================================================
+ESTADO DEL PROYECTO - MEDIA CONVERTER PRO
+================================================================
+Ultima actualizacion: 24/10/2026
+Version: 2.2.0 (en develop, PENDIENTE de release)
+Rama activa: develop (main = estable 2.1.0 ya fusionada con
+la v2.2.0 via PR #2; develop va por delante con la nueva UI)
+
+----------------------------------------------------------------
+1. QUE ES
+----------------------------------------------------------------
+App de descargas de musica/video para uso personal:
+- Escritorio (Electron, Windows) con motor yt-dlp + FFmpeg
+- Telefono: misma UI como PWA instalable o APK (Capacitor),
+  conectandose por WiFi a la PC (token de emparejamiento)
+- Fuentes: YouTube (audio/video), Spotify (resuelto via
+  busqueda en YouTube) y flacdownloader.com (visor embebido
+  manual para lossless)
+
+----------------------------------------------------------------
+2. ARQUITECTURA (ver cambio 3 para el detalle)
+----------------------------------------------------------------
+src/core/     Logica pura sin Electron (AppCore + servicios)
+src/server/   REST + SSE con node:http (standalone disponible)
+src/desktop/  Shell Electron (IPC minimo, visor FLAC nativo)
+src/web/      UI unica (escritorio + navegador + Android)
+android/      Proyecto Capacitor
+documentacion/ ESTA CARPETA (cambios numerados + este archivo)
+
+Flujo: UI -> HTTP/SSE -> server -> core -> yt-dlp/FFmpeg
+
+----------------------------------------------------------------
+3. ESTADO POR PANTALLA / MODULO
+----------------------------------------------------------------
+[COMPLETADO]
+- Limpieza de codigo muerto y lint a cero (cambio 1)
+- Motor de descargas: bugs webm/m4a, metadatos con espacios,
+  auto-update de yt-dlp, cookies anti bot-check (cambio 2)
+- Arquitectura cliente-servidor + emparejamiento LAN (cambio 3)
+- PWA + proyecto Android + CI del APK en GitHub Actions (cambio 4)
+- Rediseño mobile-first de Buscar/Spotify/Descargas (cambio 5)
+- Integracion FLAC: visor embebido + organizador a /flac (cambio 6)
+- Escritorio: sidebar >=1100px, maximizar, responsive, tabla de
+  resultados con los 11 ajustes de revision (cambio 7)
+- Correcciones de estabilidad: HTML balanceado, GPU fantasma,
+  scroll heredado, iconos, aislamiento FLAC (cambio 8)
+
+[PENDIENTE / SIGUIENTES PASOS]
+1) FASE D de la spec de UI (no iniciada):
+   - Barra de estado inferior 28px solo escritorio: conexion,
+     espacio libre en disco (necesita 1 endpoint nuevo chico en
+     core/server - avisar antes), descargas activas
+   - Notificaciones del sistema al completar/fallar descarga
+     (Notification API de Electron; aLinux/Web Notification)
+2) Validar build portable: bun run build:win (el empaquetado
+   cambio en la v2.2.0 - NO probado aun)
+3) Probar el APK en telefono fisico (tag android-v2.2.0 ->
+   Actions -> artifact) y el flujo LAN completo
+4) Release 2.2.0: merge develop -> main + tag + GitHub Release
+5) Ideas aceptadas sin fecha: firma del APK (keystore en
+   Secrets), historial persistente de descargas, confirmacion
+   al limpiar cola, tema claro automatico
+
+----------------------------------------------------------------
+4. ENTORNO DE DESARROLLO
+----------------------------------------------------------------
+- PC: HP 240 G3 (i3-4005U, 8GB, HDD, iGPU HD 4400, Win10)
+- Bun en %USERPROFILE%\.bun\bin (NO esta en el PATH de bash:
+  export PATH="$USERPROFILE/.bun/bin:$PATH")
+- Node 24 disponible como alternativa
+- Comandos: bun run dev | start | server | build:win | lint;
+  bun scripts/smoke-test.js (19 checks); bunx electron
+  scripts/flac-view-test.js
+- Git: origin = github.com/alexandervi1/media-converter-pro
+
+----------------------------------------------------------------
+5. DECISIONES FIJADAS (no revertir sin pensar)
+----------------------------------------------------------------
+- Nada de automatizar la API de flacdownloader.com (etica +
+  estabilidad). El usuario navega manual; la app organiza.
+- FLAC no aparece como formato en Buscar: las fuentes de Buscar
+  son lossy; FLAC real solo via pestaña FLAC.
+- La cola de descargas vive SOLO en la pestaña Descargas (sin
+  panel lateral en Buscar, sin saltos automaticos de pestaña).
+- applyMediaMetadata: spawn directo de ffmpeg (fluent-ffmpeg
+  rompe titulos con espacios).
+- Visor FLAC: WebContentsView del main process con triple
+  seguro al ocultar (Electron 28). No volver a <webview>.
+- disable-gpu-compositing activo por la iGPU HD 4400 (frames
+  fantasma). Reevaluar si se actualiza Electron.
+- SW cache-first: subir CACHE_NAME (actual v9) en cada cambio
+  de UI, o los clientes PWA no actualizan.
+- Breakpoints: <768 movil / 768-1099 tabs superiores / >=1100
+  sidebar + tabla de resultados.
+- Saltos de linea LF en todo el repo (.gitattributes).
+
+----------------------------------------------------------------
+6. VERIFICACION RAPIDA (checklist de regresion)
+----------------------------------------------------------------
+[ ] bun run lint -> 0 errores
+[ ] bun scripts/smoke-test.js -> TODO OK (19 PASS)
+[ ] bunx electron scripts/flac-view-test.js -> PASS
+[ ] bun run start -> app abre; FLAC->Spotify->Inicio sin
+    visores fantasma ni contenido desplazado
+[ ] Navegador 360px sin overflow horizontal (movil intacto)
+[ ] Script de balance HTML (cambio 8, punto 3) -> BALANCEADO
+    tras cualquier edicion de index.html
+
+----------------------------------------------------------------
+7. INDICE DE DOCUMENTACION DE CAMBIOS
+----------------------------------------------------------------
+cambios/cambio 1.txt  Limpieza de codigo muerto y calidad base
+cambios/cambio 2.txt  Bugs del motor de descargas + optimizacion
+cambios/cambio 3.txt  Arquitectura cliente-servidor unificada
+cambios/cambio 4.txt  PWA y app Android (Capacitor + CI APK)
+cambios/cambio 5.txt  Rediseño UI mobile-first (3 pantallas)
+cambios/cambio 6.txt  Integracion FLAC (visor + organizador)
+cambios/cambio 7.txt  Escritorio: sidebar/maximizar/tabla
+cambios/cambio 8.txt  Correcciones de aislamiento y estabilidad

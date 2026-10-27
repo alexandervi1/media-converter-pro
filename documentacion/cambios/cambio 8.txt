@@ -1,0 +1,77 @@
+============================================================
+CAMBIO 8 - CORRECCIONES DE AISLAMIENTO Y ESTABILIDAD
+============================================================
+Fecha: 24/10/2026
+Ramas: develop (commits e15dbf8, 6caea3c, cea11d1, 1016719,
+c1ab161)
+Estado: COMPLETADO Y VERIFICADO
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Corregir la serie de bugs reportados durante las pruebas del
+usuario: visor FLAC filtrandose en otras pestañas, contenido
+"abajo" al cambiar de pestaña, barra fantasma superior e
+iconos descentrados.
+
+------------------------------------------------------------
+2. BUGS Y CAUSAS RAIZ (orden de descubrimiento)
+------------------------------------------------------------
+a) IPC no serializable: flac:open-view retornaba el objeto
+   BrowserWindow -> "An object could not be cloned" y la UI
+   mostraba error aunque la ventana abria. Fix: devolver solo
+   primitivas.
+b) session.fromPartition exige app ready: la sesion FLAC se
+   crea lazy (getFlacSession en desktop/main.js).
+c) Scroll heredado entre pestañas: .content conservaba
+   scrollTop al cambiar -> la pestaña nueva "aparecia abajo".
+   Fix: content.scrollTop = 0 en switchTab.
+d) Icono descentrado en sidebar colapsado: la etiqueta oculta
+   con opacity:0 seguia ocupando espacio (flex:1). Fix:
+   display:none.
+e) Render incremental no agregaba el primer item: los elementos
+   nuevos se guardaban en el Map pero no se appendeaban al DOM
+   (regresion de la fase 3). Fix: appendChild al crear.
+f) HTML DESBALANCEADO (causa raiz principal): faltaba un
+   </div> en panel-search (div.search-main). El parser anidaba
+   panel-spotify y panel-flac DENTRO de panel-search -> visor
+   FLAC y cola "metidos" en otras pantallas. Fix: cerrar el div
+   y validar con script de balance (ver punto 4).
+g) Frames fantasma de GPU: la iGPU HD 4400 retenia regiones
+   viejas (barra azul/blanca del indicador de tabs antiguo,
+   restos del visor). Fix: disable-gpu-compositing en
+   desktop/main.js (composición por software; impacto nulo en
+   esta UI). Ver cambio 6 para el patrón WebContentsView.
+
+------------------------------------------------------------
+3. SCRIPT DE VALIDACION HTML (usar tras editar index.html)
+------------------------------------------------------------
+node -e "const html=require('fs').readFileSync('src/web/index.html','utf-8');
+const re=/<(\/?)(div|section|aside|main|header|nav|form|button)\b[^>]*>/g;
+let m;const stack=[];function L(i){return html.slice(0,i).split('\n').length}
+let bad=0;while((m=re.exec(html))){const l=L(m.index);
+if(m[1]==='/'){const t=stack.pop();if(t&&t.tag!==m[2]){console.log('DESBALANCE linea '+l);bad++}}
+else stack.push({tag:m[2],line:l})}
+if(stack.length){console.log('SIN CERRAR:',stack.map(s=>s.tag+'@'+s.line).join(', '));bad++}
+console.log(bad?'HTML CON ERRORES':'HTML BALANCEADO')"
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- FLAC -> Spotify -> Inicio -> Descargas: sin visor fantasma,
+  cada panel en su sitio, sin contenido "abajo"
+- Sin barra azul en el borde superior de la ventana
+- Sidebar colapsado: iconos centrados en su caja
+- 2 descargas simultaneas: ambas aparecen en la lista
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- Leccion principal: tras editar index.html, SIEMPRE correr el
+  script de balance (un div de mas/menos rompe el anidado de
+  todos los paneles siguientes y produce bugs confusos).
+- Los IPC de Electron solo devuelven primitivas (structured
+  clone); nunca objetos de Electron (BrowserWindow, etc.).
+- session.fromPartition solo tras app.whenReady.
+- Si vuelven a aparecer frames fantasma en otra maquina:
+  disable-gpu-compositing en desktop/main.js es el interruptor.

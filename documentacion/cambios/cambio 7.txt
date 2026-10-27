@@ -1,0 +1,99 @@
+============================================================
+CAMBIO 7 - ESCRITORIO: SIDEBAR, MAXIMIZAR, RESPONSIVE Y TABLA
+============================================================
+Fecha: 24/10/2026
+Ramas: develop (commits 38cdd40, 5596427, 803217b, 6489ffd,
+7519783, cea11d1, 1016719, 0797488, c1ab161)
+Estado: COMPLETADO Y VERIFICADO (900/1280/1366/1920 + movil)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Pulir la version de escritorio: navegacion lateral, boton de
+maximizar, layout responsive, tabla de resultados y los ajustes
+de la revision final del usuario (11 puntos).
+
+------------------------------------------------------------
+2. NAVEGACION (breakpoints definitivos)
+------------------------------------------------------------
+- <768px: barra inferior fija (movil, intacta)
+- 768-1099px: pestañas superiores (tablet/ventana pequeña)
+- >=1100px: SIDEBAR izquierdo colapsable 220px/72px, controlado
+  por el boton hamburguesa (que deja de abrir el cajon en este
+  rango; el cajon sigue accesible con la tuerquita). Estado
+  colapsado persistido (localStorage mcp_sidebar_collapsed).
+  aria-current="page", barra de acento 3px, badge de Descargas
+  doble (tabs + sidebar). Fix: ocultar la etiqueta con
+  display:none (con opacity:0 y flex:1 descentraba el icono).
+
+------------------------------------------------------------
+3. BOTON MAXIMIZAR
+------------------------------------------------------------
+- HTML: btn-maximize entre minimizar y cerrar, iconos
+  max/restaurar que se intercambian segun estado real.
+- IPC window:maximize-toggle (retorna {maximized}) + eventos
+  maximize/unmaximize del main -> preload onWindowMaximized ->
+  body.maximized (clase CSS que cambia el icono).
+- Oculto en contexto web (body.web).
+
+------------------------------------------------------------
+4. RESPONSIVE
+------------------------------------------------------------
+- .app fluido >=901px; .content centrado max 1240px.
+- home-content max 680px (lectura); listas en 2 columnas >=901px
+  (buscar/spotify/descargas); visor FLAC mas alto (66vh).
+- IMPORTANTE: los bloques @media de overrides van AL FINAL del
+  styles.css (el orden gana; un bloque colocado antes que las
+  reglas base no aplica - bug ya sufrido con display:flex vs grid).
+
+------------------------------------------------------------
+5. TABLA DE RESULTADOS (>=1100px) - puntos de la revision
+------------------------------------------------------------
+- Plantilla compartida de 5 tracks:
+  64px miniatura | 1fr titulo+artista | 64px duracion |
+  130px selector formato | 48px boton
+- Sin columna "fuente" ni "· YouTube" duplicado (solo artista).
+- Selector unico "MP3 320k/M4A/MP4 1080p" por fila, por defecto
+  el formato global (mcp_default_format).
+- Boton descarga: icono 40px neutro; azul solo en hover/focus de
+  la fila. Filas 72px, padding 12px, gap 16px.
+- Titulo 1 linea ellipsis; artista 2a linea atenuado.
+- Encabezado "N resultados para "termino"" (#results-header).
+- Estados: hover surface-hover, focus-visible borde --accent,
+  flechas arriba/abajo navegan filas, Enter descarga.
+- Duracion vacia: "--:--" atenuado (badge de miniatura oculto).
+- Enter del buscador es sumision EXPLICITA (el implicito falla
+  en algunos contextos automatizados).
+- Tabla desactivada <1100px: tarjetas apiladas (movil intacto).
+
+------------------------------------------------------------
+6. CADA COSA EN SU PESTAÑA (decision del usuario)
+------------------------------------------------------------
+- El panel lateral de cola en Buscar se ELIMINO: la cola vive
+  solo en la pestaña Descargas. Sin saltos automaticos al
+  descargar (Buscar/Inicio/Spotify): el progreso se sigue en la
+  tarjeta y el badge del sidebar cuenta las activas.
+- La lista "Archivos organizados" de FLAC se elimino (no
+  aportaba). El endpoint /api/flac/list y el watcher siguen
+  vivos.
+- La barra de opciones (formato por defecto + carpeta destino +
+  Abrir carpeta) queda bajo el buscador.
+
+------------------------------------------------------------
+7. COMO VERIFICAR
+------------------------------------------------------------
+- 900px: pestañas superiores, sin tabla, sin panel lateral
+- >=1100px: sidebar, tabla, alineacion de columnas entre filas
+- 360px: barra inferior, tarjetas, sin overflow
+- Maximizar: icono cambia y el layout crece
+
+------------------------------------------------------------
+8. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- Al agregar una pestaña nueva: actualizar tabs + sidebar
+  (side-item data-tab), switchTab (tabByName/panelByName),
+  CSS del sidebar y bottom nav.
+- .search-main envuelve el contenido de Buscar (sin grid propio
+  desde que se quito el panel lateral).
+- El HTML debe quedar BALANCEADO: verificar con el script de
+  balance (ver cambio 8) tras editar index.html.

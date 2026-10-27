@@ -1,0 +1,56 @@
+============================================================
+CAMBIO 1 - LIMPIEZA DE CODIGO MUERTO Y CALIDAD BASE
+============================================================
+Fecha: 24/10/2026
+Rama: develop (commits da40144, e5e1db0)
+Estado: COMPLETADO Y VERIFICADO
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Partir de una base sana antes de la v2.2.0: eliminar codigo
+que no se usaba, dependencias muertas y poner el linter a cero.
+
+------------------------------------------------------------
+2. ARCHIVOS MODIFICADOS
+------------------------------------------------------------
+ELIMINADOS:
+- src/renderer/js/components/ (DownloadList, SearchComponent,
+  SpotifyComponent, toast) - nunca se empaquetaban
+- src/renderer/js/store/store.js, state.js, dom.js, utils/
+  (formatters, validators) - codigo muerto (~1.100 lineas)
+- package-lock.json - se dejo bun.lock como unico lockfile
+- BUN.md - contenido integrado en GUIA_DESARROLLO.md
+
+MODIFICADOS:
+- package.json: quitadas deps yt-dlp-exec y yt-dlp-wrap (no se
+  usaban y se empaquetaban dentro del .exe); URLs de repo
+  corregidas (placeholder your-username -> alexandervi1)
+- .gitattributes: NUEVO - fuerza LF en todo el repo
+- .eslintignore: NUEVO - ignora bundle.js generado y android/
+- Todos los .js de src/: normalizados a LF y estilo ESLint
+
+------------------------------------------------------------
+3. QUE CAMBIO
+------------------------------------------------------------
+- Lint paso de 3.358 errores a 0 (la mayoria eran CRLF vs LF
+  porque el repo se checkouteaba en Windows)
+- Se elimino la API muerta de Spotify en preload
+  (onSpotifyProgress, onSpotifyComplete, spotify:cancel)
+- Fix de "return norm;" duplicado en DownloadService.search()
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- bun run lint  -> 0 errores
+- bun run bundle:renderer -> compila
+- bun run start -> la app abre normal
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- Los saltos de linea son LF en todo el repo (ver .gitattributes).
+  No cambiar, o el lint vuelve a fallar en Windows.
+- El bundle del renderer (src/web/js/bundle.js) esta en
+  .gitignore: se genera con "bun run bundle:renderer".
+- scripts/ esta incluido en el scope del lint.

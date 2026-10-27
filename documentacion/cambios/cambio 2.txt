@@ -1,0 +1,68 @@
+============================================================
+CAMBIO 2 - BUGS DEL MOTOR DE DESCARGAS Y OPTIMIZACION
+============================================================
+Fecha: 24/10/2026
+Rama: develop (commit 10403a5)
+Estado: COMPLETADO Y VERIFICADO (smoke test con descarga real)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Arreglar 3 bugs reales del motor de descargas y optimizar el
+rendimiento de la cola para PCs modestas.
+
+------------------------------------------------------------
+2. ARCHIVOS MODIFICADOS
+------------------------------------------------------------
+- src/core/services/DownloadService.js (antes src/main/services/)
+- src/core/index.js (orquestacion de la cola)
+- src/web/js/app.js (render incremental)
+- scripts/smoke-test.js (NUEVO en fases posteriores)
+- src/web/index.html + css (selector de cookies)
+- package.json (electron-builder: files sin node_modules)
+
+------------------------------------------------------------
+3. QUE CAMBIO (bugs corregidos)
+------------------------------------------------------------
+a) BUG webm/m4a: la descarga de audio asumian extensión .webm
+   fija; si YouTube servia m4a, la conversion fallaba con
+   "archivo no encontrado". Fix: template con %(ext)s y
+   --print after_move:filepath para obtener la ruta REAL que
+   escribe yt-dlp. downloadBestAudio ahora RETORNA la ruta.
+b) BUG metadatos ID3: titulos con espacios nunca se
+   etiquetaban (el tokenizador de fluent-ffmpeg partia
+   "title=Smoke Test" en dos argumentos). Fix: ffmpeg se lanza
+   con spawn directo (argv puro). NO volver a fluent-ffmpeg aqui.
+c) yt-dlp se auto-actualiza cada 7 dias en background
+   (marcador .last_update en la carpeta bin). Sin esto la app
+   "caducaba" cuando YouTube cambiaba.
+d) Cookies del navegador opcionales (menu -> Conexion) para
+   sortear el bot-check de YouTube ("Sign in to confirm you're
+   not a bot"). Config key: ytdlpCookies (none/chrome/edge/
+   firefox/brave/opera). Mensaje de error traducido.
+
+OPTIMIZACIONES:
+- Throttle de eventos de cola: 250ms leading+trailing (antes:
+  un mensaje por cada tick de yt-dlp).
+- Render incremental de la lista de descargas (mapa id->elemento,
+  firma de estado; solo se reemplaza lo que cambio).
+- Threads de encoder limitados a 2-4 (no acelera y saturaba).
+- Quitado -compression_level 0 (flag de FLAC, inutil en MP3).
+- electron-builder empaqueta solo deps de produccion.
+
+------------------------------------------------------------
+4. COMO VERIFICAR
+------------------------------------------------------------
+- bun scripts/smoke-test.js (descarga directa + conversion +
+  metadatos con titulo de varias palabras: 16 checks)
+- Descargar un video cuyo mejor audio sea m4a y otro webm.
+
+------------------------------------------------------------
+5. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- downloadBestAudio(outputDir, baseName, ...) retorna la ruta
+  real del archivo: cualquier nueva fuente debe hacer lo mismo.
+- applyMediaMetadata usa spawn directo: si se toca, mantener
+  argv puro (fluent-ffmpeg rompe valores con espacios).
+- El bot-check de YouTube es intermitente segun IP: la
+  mitigation son las cookies, no fuerza bruta.

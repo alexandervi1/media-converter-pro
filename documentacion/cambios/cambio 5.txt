@@ -1,0 +1,82 @@
+============================================================
+CAMBIO 5 - REDISENO UI MOBILE-FIRST (BUSCAR/SPOTIFY/DESCARGAS)
+============================================================
+Fecha: 24/10/2026
+Ramas: develop (commits c9a3c3c, 72c13d1)
+Estado: COMPLETADO Y VERIFICADO (viewport telefono + descargas
+reales end-to-end)
+
+------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------
+Rediseñar las pantallas con enfoque mobile-first (360px
+primero), sistema de diseño unificado y pantallas Spotify y
+Descargas al nuevo lenguaje.
+
+------------------------------------------------------------
+2. SISTEMA DE DISEÑO (variables del tema dark en :root)
+------------------------------------------------------------
+--bg #0a1220 | --surface #111b2e | --surface-hover #16233a
+--border #22324d | --text #eef3fb | --text-secondary #8fa0ba
+--primary/--accent #3b82f6 | --success #22c55e
+Radios: 16px tarjetas/inputs, 10-12px botones, 18px chips.
+Fuente system-ui. Touch targets >= 44px. :focus-visible.
+prefers-reduced-motion respetado. Mayuscula solo inicial
+(se elimino text-transform: uppercase de .btn-spotify).
+
+------------------------------------------------------------
+3. PANTALLA BUSCAR
+------------------------------------------------------------
+- Buscador 52px con lupa DENTRO + boton X (solo con texto),
+  type=search, enterkeyhint, font 16px (evita zoom iOS/Android).
+- Chips de filtro con iconos SVG de linea unificados 16px
+  (sin emojis), aria-pressed, scroll horizontal sin barra:
+  Todos / Musica HQ / Video / En vivo ("en vivo" anade el
+  sufijo a la query en DownloadService.search - unico toque
+  de logica, avisado).
+- Estado vacio: fila destacada "Pegar un enlace", Busquedas
+  recientes (6, borrables con X), Descargas recientes (4 con
+  Abrir, solo escritorio), "Prueba con" en chips.
+- Tarjetas de resultado con duracion en esquina y botones
+  directos MP3/M4A/MP4 con progreso inline (velocidad/ETA) y
+  estado final "Guardado en Descargas".
+
+------------------------------------------------------------
+4. PANTALLA SPOTIFY
+------------------------------------------------------------
+- Input al patron nuevo, skeleton de playlist.
+- Filas seleccionables (tap marca/desmarca), Todas/Ninguna,
+  contador en vivo "X de Y", boton con conteo dinamico que se
+  deshabilita en 0. Solo se envian las canciones marcadas.
+
+------------------------------------------------------------
+5. PANTALLA DESCARGAS
+------------------------------------------------------------
+- Tarjetas con miniatura, badge de formato, estado coloreado,
+  barra de progreso, acciones de 44px. "Abrir archivo" solo
+  escritorio (capabilities).
+
+------------------------------------------------------------
+6. ARCHIVOS
+------------------------------------------------------------
+- src/web/index.html, src/web/css/styles.css, src/web/js/app.js
+  (SOLO UI; Api/core/server sin cambios salvo el sufijo "en vivo")
+- src/web/sw.js: CACHE_NAME subida a v3
+
+------------------------------------------------------------
+7. COMO VERIFICAR
+------------------------------------------------------------
+- 360/390/430/1280px sin scroll horizontal
+- Playlist real: parsear, desmarcar, descargar 2 canciones ->
+  llegan a Downloads/mp3 con etiquetas limpias
+- Descarga desde tarjeta: progreso inline -> Guardado
+
+------------------------------------------------------------
+8. NOTAS PARA FUTURAS IMPLEMENTACIONES
+------------------------------------------------------------
+- El render incremental de Descargas tiene fix de append
+  (los elementos nuevos SIEMPRE se agregan al DOM).
+- Los resultados de Buscar NO incluyen FLAC: el pipeline
+  convierte de fuentes lossy (YouTube); FLAC real solo via
+  pestaña FLAC. Si se quiere, es cambio de logica.
+- Formato por defecto de Buscar: localStorage mcp_default_format.
